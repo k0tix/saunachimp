@@ -27,14 +27,14 @@ CREATE TABLE IF NOT EXISTS owned_products (
   user_id VARCHAR(255) NOT NULL,
   purchase_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   in_use TINYINT DEFAULT 0,
-  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 
 
 
 
 -- Insert sample data
-INSERT INTO products (name, description, price, item_type) VALUES
+INSERT INTO products (name, description, price, item_type, asset_url) VALUES
   ('Kiuas', 'Harvia Kiuas', 1299, 'kiuas', '/assets/kiuas.jpg'),
   ('Kupari lauteet', 'Perfect heat transfer for your sauna', 2209, 'lauteet', '/assets/lauteet.jpg'),
   ('Olut', 'gloms', 2209, 'generic', '/assets/olut.jpg'),
