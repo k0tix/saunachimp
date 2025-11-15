@@ -1,8 +1,6 @@
 import asyncio
 import aiomysql
 import pandas as pd
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
 from openai import AsyncOpenAI
 
 from contextlib import asynccontextmanager
@@ -10,10 +8,15 @@ import logging
 import os
 
 
-app = FastAPI()
-
 logger = logging.getLogger("logger")
 logger.setLevel(logging.INFO)
+
+handler = logging.StreamHandler()
+handler.setLevel(logging.INFO)
+formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+
+logger.addHandler(handler)
 
 client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -79,9 +82,45 @@ async def wellness_assessment(data_str: str):
             {
                 "role": "system",
                 "content": (
-                    "You are a wellness assessment AI. Analyze the provided sauna sensor data "
-                    "and generate a very concise wellness evaluation with meaningful insights "
-                    "and recommendations."
+                    """
+                    You are a wellness assistant. You will receive sauna sensor data as a list of measurements. Each measurement includes:
+
+                    - TEMP: temperature in Celsius
+                    - HUM: relative humidity in %
+                    - SENSOR_TIMESTAMP: Unix timestamp in milliseconds
+
+                    Your task is to analyze this data and generate a short, structured wellness report for display on a wellness monitor. The report should include:
+
+                    1. Average, peak, and range of sauna temperature.
+                    2. Average, peak, and trend of humidity.
+                    3. Duration of the sauna session.
+                    4. Time spent in optimal temperature range (45–50 °C).
+                    5. Thermal comfort rating (Comfortable / Moderate / Intense).
+                    6. Hydration caution if conditions suggest risk (high heat + low humidity for extended periods).
+                    7. Optional concise textual insight summarizing the session (1–2 sentences).
+
+                    Output format (example):
+
+                    {
+                    "temperature": {
+                        "average": 47.2,
+                        "peak": 48.3,
+                        "range": [46.3, 48.3],
+                        "time_in_optimal_range_minutes": 12
+                    },
+                    "humidity": {
+                        "average": 16.0,
+                        "peak": 16.4,
+                        "trend": "slightly decreasing"
+                    },
+                    "duration_minutes": 15,
+                    "thermal_comfort": "Moderate",
+                    "hydration_caution": "Yes",
+                    "summary": "You maintained a moderate sauna session with stable heat. Stay hydrated due to low humidity."
+                    }
+
+                    Do not invent data or metrics; only report values that can be derived from the input.
+                    """
                 ),
             },
             {"role": "user", "content": data_str},
@@ -92,19 +131,18 @@ async def wellness_assessment(data_str: str):
 
 async def poll():
     logger.info("Polling loop started")
-
     while True:
         try:
             pending = await fetch_sensor_logs()
-
-            if not pending:
-                await asyncio.sleep(POLL_INTERVAL_SECONDS)
-                continue
-
+            logger.info(pending.head())
+            logger.info("Got sensor logs")
             try:
+                logger.info("Writing into db")
                 result = await wellness_assessment(
                     str(pending.drop(columns=["SESSION_ID"]).to_dict(orient="records")))
+                logger.info(f"{result}")
                 await save_result(pending["SESSION_ID"].max(), result)
+                logger.info("Written into db")
             except Exception as e:
                 logger.info(f"Error processing item with timestamp {pending['SENSOR_TIMESTAMP'].max()}: {e}")
 
@@ -114,26 +152,7 @@ async def poll():
         await asyncio.sleep(POLL_INTERVAL_SECONDS)
 
 
-@app.on_event("startup")
-async def startup():
-    logger.info("ASDASD wellness_api starting up...")
-    asyncio.create_task(poll())
-    logger.info("wellness_api shutting down...")
-
-
-@app.get("/wellness")
-async def wellness():
-    conn = await get_conn()
-    try:
-        async with conn.cursor(aiomysql.DictCursor) as cur:
-            await cur.execute(
-                "SELECT wellness FROM wellness_results ORDER BY id DESC LIMIT 1"
-            )
-            row = await cur.fetchone()
-
-            if not row:
-                raise HTTPException(status_code=404, detail="No wellness results found")
-
-            return {"wellness": row["wellness"]}
-    finally:
-        conn.close()
+if __name__ == "__main__":
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(poll())

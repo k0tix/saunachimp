@@ -19,4 +19,4 @@ COPY . .
 
 EXPOSE 8888
 
-CMD ["uv", "run", "uvicorn", "wellness:app", "--host", "0.0.0.0", "--port", "8888"]
+CMD ["uv", "run", "python", "wellness.py"]
