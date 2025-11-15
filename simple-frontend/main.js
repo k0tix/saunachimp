@@ -19,7 +19,9 @@ class SaunaController {
             const data = await response.json();
             
             if (data.scene !== this.currentScene) {
-                this.loadScene(data.scene, data.config);
+                // Map numeric scene ids from backend to scene folder names
+                const sceneName = this.getSceneName(data.scene);
+                this.loadScene(sceneName, data.config);
                 this.currentScene = data.scene;
             }
         } catch (error) {
@@ -27,6 +29,34 @@ class SaunaController {
             // Fallback to demo mode
             this.loadDemoScene();
         }
+    }
+
+    /**
+     * Maps backend scene identifiers to folder names.
+     * Supports both numeric ids and existing string names for backward compatibility.
+     * 1 -> loyly-game
+     * 2 -> habbo-sauna
+     * 3 -> video-loop
+     */
+    getSceneName(sceneIdOrName) {
+        const mapping = {
+            1: 'loyly-game',
+            2: 'habbo-sauna',
+            3: 'video-loop'
+        };
+
+        // If it's a number (or numeric string), use the mapping
+        if (typeof sceneIdOrName === 'number') {
+            return mapping[sceneIdOrName] || 'video-loop';
+        }
+
+        const numeric = Number(sceneIdOrName);
+        if (!Number.isNaN(numeric) && mapping[numeric]) {
+            return mapping[numeric];
+        }
+
+        // Otherwise assume it's already a valid scene folder name
+        return sceneIdOrName;
     }
 
     loadScene(sceneName, config) {
