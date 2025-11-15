@@ -39,7 +39,7 @@ INSERT INTO products (name, description, price, item_type, asset_url) VALUES
   ('Kupari lauteet', 'Perfect heat transfer for your sauna', 2209, 'lauteet', '/assets/lauteet.jpg'),
   ('Olut', 'gloms', 2209, 'generic', '/assets/olut.jpg'),
   ('saunakauha', 'saunakauha', 10, 'saunakauha', '/assets/saunakauha.jpg'),
-  ('saunakiulu', 'saunakiulu', 10, 'kiulu', '/assets/kiulu.jpg');
+  ('saunakiulu', 'saunakiulu', 10, 'kiilu', '/assets/kiulu.jpg');
 
 -- Insert sample user
 INSERT INTO users (id, username, email) VALUES

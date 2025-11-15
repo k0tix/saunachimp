@@ -163,16 +163,15 @@
                     <span id="hum">0%</span>
                 </div>
                 <div class="stat-row">
-                    <span>ITEMS:</span>
-                    <span id="count">0/24</span>
+                    <span>MONEY:</span>
+                    <span id="money">10000</span>
                 </div>
                 <div class="stat-row">
-                    <span>RANK:</span>
-                    <span id="rank">NEWBIE</span>
+                    <span>ITEMS:</span>
+                    <span id="count">0/12</span>
                 </div>
             </div>
 
-            <button class="btn" id="collectBtn">COLLECT</button>
             <button class="btn" id="clearBtn">CLEAR</button>
             
             <div class="inventory">
@@ -187,6 +186,9 @@
     </div>
 
     <script>
+        const SERVER_URL = 'http://localhost:8080';
+        const USER_ID = 'user_001';
+
         const app = new PIXI.Application({
             width: window.innerWidth - 300,
             height: window.innerHeight,
@@ -215,34 +217,27 @@
             log('ADD habbo_sauna_room.jpg TO FOLDER');
         });
 
-        // Isometric spots - ADJUST THESE to match your image!
-        // Typical Habbo room: bottom-left is ~(100,500), center is ~(400,350)
-        const spots = [
-            {type: 'kiuas', x: 550, y: 610, label: 'KIUAS'},
-            {type: 'kauha', x: 420, y: 567, label: 'KIULU'},
-            {type: 'lauteet', x: 630, y: 420, label: 'LAUTEET'}
+        // Base coordinates at reference canvas width
+        const BASE_WIDTH = window.innerWidth - 300;
+        const BASE_HEIGHT = window.innerHeight;
+        
+        // Isometric spots for each product type
+        const spotsBase = [
+            {type: 'kiuas', x: 550, y: 610, label: 'KIUAS', slotId: 'kiuas_1'},
+            {type: 'lauteet', x: 630, y: 420, label: 'LAUTEET', slotId: 'lauteet_1'},
+            {type: 'generic', x: 700, y: 500, label: 'OLUT', slotId: 'generic_1'},
+            {type: 'saunakauha', x: 420, y: 567, label: 'KAUHA', slotId: 'saunakauha_1'},
+            {type: 'kiilu', x: 490, y: 567, label: 'KIULU', slotId: 'kiilu_1'}
         ];
+        
+        let spots = spotsBase.map(s => ({...s}));
 
-        const items = [
-            {id: 1, type: 'kiuas', name: 'KIUAS', rarity: 'common', temp: 0},
-            {id: 2, type: 'kiuas', name: 'KIUAS', rarity: 'rare', temp: 30},
-            {id: 3, type: 'kiuas', name: 'KIUAS', rarity: 'epic', temp: 60},
-            {id: 4, type: 'kiuas', name: 'KIUAS', rarity: 'legendary', temp: 80},
-            
-            {id: 5, type: 'kauha', name: 'KIULU', rarity: 'common', temp: 5},
-            {id: 6, type: 'kauha', name: 'KIULU', rarity: 'rare', temp: 25},
-            {id: 7, type: 'kauha', name: 'KIULU', rarity: 'epic', temp: 55},
-            {id: 8, type: 'kauha', name: 'KIULU', rarity: 'legendary', temp: 75},
-            
-            {id: 9, type: 'lauteet', name: 'LAUTEET', rarity: 'common', temp: 0},
-            {id: 10, type: 'lauteet', name: 'LAUTEET', rarity: 'rare', temp: 40},
-            {id: 11, type: 'lauteet', name: 'LAUTEET', rarity: 'epic', temp: 70},
-            {id: 12, type: 'lauteet', name: 'LAUTEET', rarity: 'legendary', temp: 85}
-        ];
+        let items = [];
 
         let sensorData = [];
         let dataIndex = 0;
         let unlocked = new Set();
+        let money = 0;
         let maxTemp = 0;
         let selected = null;
         let placed = {};
@@ -269,68 +264,88 @@
             console.log(`Clicked at X: ${x}, Y: ${y}`);
         });
 
+        function scaleSpots() {
+            const scaleX = app.screen.width / BASE_WIDTH;
+            const scaleY = app.screen.height / BASE_HEIGHT;
+            
+            spots.forEach((spot, idx) => {
+                const base = spotsBase[idx];
+                spot.x = base.x * scaleX;
+                spot.y = base.y * scaleY;
+                
+                if (spot.graphics) {
+                    spot.graphics.x = spot.x;
+                    spot.graphics.y = spot.y;
+                }
+            });
+        }
+
         // Draw spots with overlay indicators
-        spots.forEach(spot => {
-            const spotGfx = new PIXI.Graphics();
-            
-            // Draw isometric tile highlight
-            spotGfx.lineStyle(2, 0xffff00, 0.4);
-            spotGfx.beginFill(0xffffff, 0.1);
-            const sw = 40, sh = 20;
-            spotGfx.drawPolygon([
-                0, 0,
-                sw, sh/2,
-                0, sh,
-                -sw, sh/2
-            ]);
-            
-            spotGfx.x = spot.x;
-            spotGfx.y = spot.y;
-            spotGfx.interactive = true;
-            spotGfx.buttonMode = true;
-            
-            // Hover effect
-            spotGfx.on('mouseover', () => {
-                spotGfx.clear();
-                spotGfx.lineStyle(3, 0x00ff00, 0.8);
-                spotGfx.beginFill(0x00ff00, 0.2);
+        function drawSpots() {
+            spots.forEach(spot => {
+                const spotGfx = new PIXI.Graphics();
+                
+                // Draw isometric tile highlight
+                spotGfx.lineStyle(2, 0xffff00, 0.4);
+                spotGfx.beginFill(0xffffff, 0.1);
+                const sw = 40, sh = 20;
                 spotGfx.drawPolygon([
                     0, 0,
                     sw, sh/2,
                     0, sh,
                     -sw, sh/2
                 ]);
-            });
-            
-            spotGfx.on('mouseout', () => {
-                if (!placed[spot.type]) {
+                
+                spotGfx.x = spot.x;
+                spotGfx.y = spot.y;
+                spotGfx.interactive = true;
+                spotGfx.buttonMode = true;
+                
+                // Hover effect
+                spotGfx.on('mouseover', () => {
                     spotGfx.clear();
-                    spotGfx.lineStyle(2, 0xffff00, 0.4);
-                    spotGfx.beginFill(0xffffff, 0.1);
+                    spotGfx.lineStyle(3, 0x00ff00, 0.8);
+                    spotGfx.beginFill(0x00ff00, 0.2);
                     spotGfx.drawPolygon([
                         0, 0,
                         sw, sh/2,
                         0, sh,
                         -sw, sh/2
                     ]);
-                }
+                });
+                
+                spotGfx.on('mouseout', () => {
+                    if (!placed[spot.type]) {
+                        spotGfx.clear();
+                        spotGfx.lineStyle(2, 0xffff00, 0.4);
+                        spotGfx.beginFill(0xffffff, 0.1);
+                        spotGfx.drawPolygon([
+                            0, 0,
+                            sw, sh/2,
+                            0, sh,
+                            -sw, sh/2
+                        ]);
+                    }
+                });
+                
+                spotGfx.on('click', () => placeItem(spot));
+                
+                const label = new PIXI.Text(spot.label, {
+                    fontSize: 9,
+                    fill: 0xffffff,
+                    alpha: 0.6,
+                    fontWeight: 'bold'
+                });
+                label.anchor.set(0.5);
+                label.y = sh + 10;
+                spotGfx.addChild(label);
+                
+                container.addChild(spotGfx);
+                spot.graphics = spotGfx;
             });
-            
-            spotGfx.on('click', () => placeItem(spot));
-            
-            const label = new PIXI.Text(spot.label, {
-                fontSize: 9,
-                fill: 0xffffff,
-                alpha: 0.6,
-                fontWeight: 'bold'
-            });
-            label.anchor.set(0.5);
-            label.y = sh + 10;
-            spotGfx.addChild(label);
-            
-            container.addChild(spotGfx);
-            spot.graphics = spotGfx;
-        });
+        }
+
+        drawSpots();
 
         function drawIsometricItem(item) {
             const g = new PIXI.Graphics();
@@ -356,17 +371,11 @@
                     g.beginFill(dark);
                     g.drawPolygon([40,40, 80,20, 80,60, 40,80]);
                     // Flames
-                    if (item.rarity !== 'common') {
-                        g.beginFill(0xff6600);
-                        g.drawPolygon([30,10, 40,0, 50,10, 45,20, 35,20]);
-                    }
-                    if (item.rarity === 'legendary') {
-                        g.beginFill(0xffaa00);
-                        g.drawCircle(40, 0, 8);
-                    }
+                    g.beginFill(0xff6600);
+                    g.drawPolygon([30,10, 40,0, 50,10, 45,20, 35,20]);
                     break;
                     
-                case 'kauha': // Ladle - vertical with bowl
+                case 'saunakauha': // Ladle - vertical with bowl
                     g.beginFill(dark);
                     g.drawRect(36, 0, 8, 60);
                     g.beginFill(light);
@@ -375,26 +384,24 @@
                     g.drawEllipse(40, 63, 18, 8);
                     break;
                     
-                case 'mittari': // Thermometer - vertical rectangle
-                    g.beginFill(0xcccccc);
-                    g.drawRect(30, 0, 20, 60);
-                    g.beginFill(0xff0000);
-                    g.drawRect(36, 10, 8, 45);
-                    g.beginFill(0xff0000);
-                    g.drawCircle(40, 58, 6);
+                case 'kiilu': // Bucket
+                    g.beginFill(dark);
+                    g.drawPolygon([20,30, 30,25, 50,25, 60,30, 60,70, 20,70]);
+                    g.beginFill(light);
+                    g.drawPolygon([20,30, 60,30, 60,10, 50,5, 30,5, 20,10]);
+                    // Handle
+                    g.lineStyle(3, dark);
+                    g.arc(40, 20, 15, Math.PI, 0);
                     break;
                     
                 case 'lauteet': // Benches - stacked platforms
-                    for (let i = 0; i < (item.rarity === 'legendary' ? 3 : item.rarity === 'epic' ? 2 : 1); i++) {
-                        const yOffset = i * 25;
-                        g.beginFill(dark);
-                        g.drawPolygon([0,40-yOffset, 80,20-yOffset, 80,30-yOffset, 0,50-yOffset]);
-                        g.beginFill(light);
-                        g.drawPolygon([0,40-yOffset, 80,20-yOffset, 160,40-yOffset, 80,60-yOffset]);
-                    }
+                    g.beginFill(dark);
+                    g.drawPolygon([0,40, 80,20, 80,30, 0,50]);
+                    g.beginFill(light);
+                    g.drawPolygon([0,40, 80,20, 160,40, 80,60]);
                     break;
                     
-                case 'kilju': // Bottle
+                case 'generic': // Bottle (Olut)
                     g.beginFill(dark);
                     g.drawPolygon([20,30, 30,25, 50,25, 60,30, 60,70, 20,70]);
                     g.beginFill(light);
@@ -402,20 +409,9 @@
                     // Neck
                     g.beginFill(0x666666);
                     g.drawRect(35, 0, 10, 10);
-                    break;
-                    
-                case 'kivet': // Stones - pile of ellipses
-                    const stoneCount = item.rarity === 'legendary' ? 6 : item.rarity === 'epic' ? 5 : item.rarity === 'rare' ? 4 : 3;
-                    for (let i = 0; i < stoneCount; i++) {
-                        g.beginFill(i % 2 ? dark : light);
-                        const x = 30 + (i % 3) * 15 - 15;
-                        const y = 50 - Math.floor(i / 3) * 20;
-                        g.drawEllipse(x, y, 12, 8);
-                    }
-                    if (item.rarity === 'legendary') {
-                        g.beginFill(0xff6600);
-                        g.drawCircle(30, 35, 4);
-                    }
+                    // Label
+                    g.beginFill(0xffaa00);
+                    g.drawRect(25, 40, 30, 15);
                     break;
             }
             
@@ -435,23 +431,7 @@
                 return;
             }
             
-            // Remove old item from this spot
-            if (placed[spot.type]) {
-                spot.graphics.children.forEach(c => {
-                    if (c instanceof PIXI.Graphics && c !== spot.graphics.children[0]) {
-                        spot.graphics.removeChild(c);
-                    }
-                });
-            }
-            
-            const sprite = drawIsometricItem(item);
-            sprite.x = -40;
-            sprite.y = -60;
-            sprite.scale.set(0.6);
-            spot.graphics.addChild(sprite);
-            
-            placed[spot.type] = item.id;
-            
+            placeItemInScene(spot, item);
             log('PLACED: ' + item.name);
             selected = null;
             updateInventory();
@@ -459,8 +439,10 @@
 
         const itemIcons = {
             kiuas: '🔥',
-            kauha: '🪣',
-            lauteet: '🪑'
+            lauteet: '🪑',
+            generic: '🍺',
+            saunakauha: '🥄',
+            kiilu: '🪣'
         };
 
         function updateInventory() {
@@ -468,23 +450,34 @@
             grid.innerHTML = '';
             
             items.forEach(item => {
+                const isOwned = unlocked.has(item.id);
                 const div = document.createElement('div');
-                div.className = `item-card ${unlocked.has(item.id) ? '' : 'locked'} ${selected === item.id ? 'selected' : ''}`;
+                div.className = `item-card ${isOwned ? '' : 'locked'} ${selected === item.id ? 'selected' : ''}`;
                 
-                const icon = unlocked.has(item.id) ? itemIcons[item.type] : '🔒';
+                const icon = isOwned ? itemIcons[item.type] : '🔒';
                 
                 div.innerHTML = `
                     <div class="item-icon" style="font-size: 30px; line-height: 50px;">${icon}</div>
-                    <div class="item-name">${unlocked.has(item.id) ? item.name : '???'}</div>
-                    ${unlocked.has(item.id) ? `<div class="rarity ${item.rarity}">${item.rarity.toUpperCase()}</div>` : ''}
+                    <div class="item-name">${isOwned ? item.name : '???'}</div>
+                    ${isOwned ? `<div class="rarity ${item.rarity}">${item.rarity.toUpperCase()}</div>` : 
+                        `<div style="font-size: 10px; color: #f39c12; margin-top: 5px;">💰 ${item.price}</div>
+                         <button class="btn" style="font-size: 8px; padding: 4px; margin: 5px 0 0 0;">BUY</button>`}
                 `;
                 
-                if (unlocked.has(item.id)) {
+                if (isOwned) {
                     div.onclick = () => {
                         selected = item.id;
                         updateInventory();
                         log('SELECTED: ' + item.name);
                     };
+                } else {
+                    const buyBtn = div.querySelector('.btn');
+                    if (buyBtn) {
+                        buyBtn.onclick = async (e) => {
+                            e.stopPropagation();
+                            await buyItem(item);
+                        };
+                    }
                 }
                 
                 grid.appendChild(div);
@@ -502,32 +495,130 @@
             
             document.getElementById('temp').textContent = temp.toFixed(1) + 'C';
             document.getElementById('hum').textContent = hum.toFixed(1) + '%';
-            document.getElementById('count').textContent = unlocked.size + '/12';
-            
-            const rank = unlocked.size < 6 ? 'NEWBIE' :
-                        unlocked.size < 12 ? 'REGULAR' :
-                        unlocked.size < 18 ? 'EXPERT' : 'MASTER';
-            document.getElementById('rank').textContent = rank;
+            document.getElementById('money').textContent = money;
+            document.getElementById('count').textContent = unlocked.size + '/' + (items.length || 0);
             
             dataIndex = (dataIndex + 1) % sensorData.length;
         }
 
-        document.getElementById('collectBtn').onclick = () => {
-            updateStats();
+        function updateMoneyDisplay() {
+            document.getElementById('money').textContent = money;
+            document.getElementById('count').textContent = unlocked.size + '/' + (items.length || 0);
+        }
+
+        async function buyItem(item) {
+            log('BUY ATTEMPT: ' + item.name + ' | Price: ' + item.price + ' | Your money: ' + money);
             
-            const available = items.filter(i => 
-                !unlocked.has(i.id) && maxTemp >= i.temp
-            );
-            
-            if (available.length) {
-                const item = available[Math.floor(Math.random() * available.length)];
-                unlocked.add(item.id);
-                updateInventory();
-                log('UNLOCKED: ' + item.name + ' (' + item.rarity + ')');
-            } else {
-                log('NO NEW ITEMS');
+            if (money < item.price) {
+                log('INSUFFICIENT FUNDS: Need ' + item.price + ', Have ' + money);
+                return;
             }
-        };
+
+            if (!item.productId) {
+                log('PRODUCT NOT LINKED');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${SERVER_URL}/api/owned-products/purchase/${USER_ID}/${item.productId}`, {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    money = result.data.transaction.new_balance;
+                    unlocked.add(item.id);
+                    updateInventory();
+                    updateMoneyDisplay();
+                    log('PURCHASED: ' + item.name + ' (-' + item.price + ')');
+                } else {
+                    log('PURCHASE FAILED: ' + result.message);
+                }
+            } catch (error) {
+                log('ERROR: ' + error.message);
+            }
+        }
+
+        async function loadOwnedProducts() {
+            try {
+                const response = await fetch(`${SERVER_URL}/api/owned-products/user/${USER_ID}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    result.data.forEach(owned => {
+                        const item = items.find(i => i.productId === owned.product_id);
+                        if (item) {
+                            unlocked.add(item.id);
+                            
+                            // If item is in use, place it in the scene
+                            if (owned.in_use === 1) {
+                                const spot = spots.find(s => s.type === item.type);
+                                if (spot) {
+                                    placeItemInScene(spot, item);
+                                }
+                            }
+                        }
+                    });
+                    updateInventory();
+                    log('LOADED: ' + unlocked.size + ' OWNED ITEMS');
+                }
+            } catch (error) {
+                log('LOAD ERROR: ' + error.message);
+            }
+        }
+
+        function placeItemInScene(spot, item) {
+            // Remove old item from this spot
+            if (placed[spot.slotId]) {
+                spot.graphics.children.forEach(c => {
+                    if (c instanceof PIXI.Graphics && c !== spot.graphics.children[0]) {
+                        spot.graphics.removeChild(c);
+                    }
+                });
+            }
+            
+            const sprite = drawIsometricItem(item);
+            sprite.x = -40;
+            sprite.y = -60;
+            sprite.scale.set(0.6);
+            spot.graphics.addChild(sprite);
+            
+            placed[spot.slotId] = item.id;
+        }
+
+        async function loadProducts() {
+            try {
+                const response = await fetch(`${SERVER_URL}/api/products`);
+                const result = await response.json();
+
+                if (result.success) {
+                    log('=== DATABASE PRODUCTS ===');
+
+                    // Build items array from backend products
+                    items = result.data.map(product => {
+                        log(`ID: ${product.id} | ${product.name} | ${product.price}💰 | ${product.item_type}`);
+                        
+                        return {
+                            id: product.id,
+                            type: product.item_type,
+                            name: product.name,
+                            rarity: 'common',
+                            price: product.price,
+                            productId: product.id
+                        };
+                    });
+                    
+                    log('========================');
+                    log('LOADED: ' + items.length + ' PRODUCTS');
+                    
+                    // Update inventory after items are loaded
+                    updateInventory();
+                }
+            } catch (error) {
+                log('PRODUCT LOAD ERROR: ' + error.message);
+            }
+        }
 
         document.getElementById('clearBtn').onclick = () => {
             placed = {};
@@ -549,20 +640,58 @@
             console.scrollTop = console.scrollHeight;
         }
 
-        fetch('../mock_sauna_data.json')
-            .then(r => r.json())
-            .then(data => {
-                sensorData = data;
-                log('LOADED: ' + data.length);
-                updateStats();
-            })
-            .catch(() => log('ERROR'));
+        // Initialize
+        async function init() {
+            log('INITIALIZING...');
+            
+            // Load user data first
+            await loadUser();
+            
+            await loadProducts();
+            await loadOwnedProducts();
+            
+            // Load sensor data
+            fetch('../mock_sauna_data.json')
+                .then(r => r.json())
+                .then(data => {
+                    sensorData = data;
+                    log('LOADED: ' + data.length + ' SENSOR RECORDS');
+                    updateStats();
+                })
+                .catch(() => log('SENSOR DATA ERROR'));
 
-        setInterval(() => {
-            if (sensorData.length) updateStats();
-        }, 3000);
+            setInterval(() => {
+                if (sensorData.length) updateStats();
+            }, 3000);
 
-        updateInventory();
+            updateInventory();
+        }
+
+        async function loadUser() {
+            try {
+                log('FETCHING USER: ' + USER_ID);
+                const response = await fetch(`${SERVER_URL}/api/users/${USER_ID}`);
+                const result = await response.json();
+                
+                log('USER RESPONSE: ' + JSON.stringify(result));
+
+                if (result.success) {
+                    money = result.data.money;
+                    updateMoneyDisplay();
+                    log('USER: ' + result.data.username + ' | 💰 ' + money);
+                } else {
+                    log('USER LOAD FAILED: ' + result.message);
+                    money = 10000;
+                    updateMoneyDisplay();
+                }
+            } catch (error) {
+                log('USER LOAD ERROR: ' + error.message);
+                money = 10000; // Fallback
+                updateMoneyDisplay();
+            }
+        }
+
+        init();
     </script>
 </body>
 </html>

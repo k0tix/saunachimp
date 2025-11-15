@@ -8,6 +8,7 @@ import databaseRoutes from './routes/database';
 import harviaRoutes from './routes/harvia';
 import ownedProductsRoutes from './routes/owned-products';
 import wellnessRoutes from './routes/wellness';
+import usersRoutes from './routes/users';
 import { startHousekeeping } from './services/housekeeping';
 
 // Load environment variables
@@ -37,6 +38,7 @@ app.use('/api/database', databaseRoutes);
 app.use('/api/harvia', harviaRoutes);
 app.use('/api/owned-products', ownedProductsRoutes);
 app.use('/api/wellness', wellnessRoutes);
+app.use('/api/users', usersRoutes);
 
 // Root endpoint
 app.get('/', (req: Request, res: Response) => {
