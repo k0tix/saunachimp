@@ -1,7 +1,7 @@
 import { query } from '../config/database';
-import { ResultSetHeader } from 'mysql2';
 import { handleScene1 } from './scenes/scene1';
 
+const HUM_CHANGE_THRESHOLD = 10;
 interface SensorData {
   heapSize: number;
   rssi: number;
@@ -45,9 +45,11 @@ export interface HousekeepingStatus {
     temp: number;
     humidity: number;
     presence: boolean;
+    loyly: boolean;
   };
   game: {
     scene_config: {
+      status: number;
       id: number;
     };
     event_queue: GameEvent[];
@@ -64,10 +66,12 @@ let housekeepingState: HousekeepingStatus = {
     temp: 0,
     humidity: 0,
     presence: false,
+    loyly: false,
   },
   game: {
     scene_config: {
       id: 0,
+      status: 0
     },
     event_queue: [],
   },
@@ -85,7 +89,18 @@ export const setHousekeepingEnabled = (enabled: boolean): void => {
 };
 export const setHousekeepingScene = (scene_id: number): void => {
   housekeepingState.game.scene_config.id = scene_id;
+  housekeepingState.game.scene_config.status = 0;
   console.log(`🔧 Scene ${scene_id} set`);
+};
+export const setHousekeepingSceneStatus = (status: number): void => {
+  housekeepingState.game.scene_config.status = status;
+  console.log(`🔧 Scene ${status} set`);
+};
+export const getHousekeepingSceneStatus = (): number => {
+  return housekeepingState.game.scene_config.status;
+};
+export const getHousekeepingScene = (): number => {
+  return housekeepingState.game.scene_config.id;
 };
 export const getHousekeepingEvents = (): GameEvent[] => {
   const events = housekeepingState.game.event_queue.filter((event) => event.run_at <= Date.now());
@@ -116,7 +131,20 @@ const fetchAndLogSensorData = async () => {
       temp: data.data.temp,
       humidity: data.data.hum,
       presence: data.data.presence > 0,
+      loyly: false,
     };
+
+    try {
+      const last_hum_data = await query(
+        `SELECT hum from sensor_logs order by id desc limit 1`,
+      ) as any[];
+      const last_hum = (last_hum_data as any)[0].hum ?? 0;
+      if ( data.data.hum-last_hum > HUM_CHANGE_THRESHOLD) {
+        housekeepingState.info.loyly = true;
+      }
+    } catch (error) {
+      console.error('❌ Error fetching last humidity data:', error);
+    }
     // Insert sensor data into database
     await query(
       `INSERT INTO sensor_logs (
@@ -165,6 +193,8 @@ export const runHousekeeping = async () => {
     housekeepingState.runCount++;
     housekeepingState.lastRunTime = new Date().toISOString();
     await fetchAndLogSensorData();
+
+
     switch (housekeepingState.game.scene_config.id) {
       case 0:
         return;
@@ -172,7 +202,7 @@ export const runHousekeeping = async () => {
         housekeepingState.game.event_queue = [...housekeepingState.game.event_queue, await handleScene1(housekeepingState)] ;
         break;
       default:
-        return; 
+        return;  
     }
 
 
