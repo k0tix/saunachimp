@@ -93,6 +93,7 @@ export const setHousekeepingEnabled = (enabled: boolean): void => {
 export const setHousekeepingScene = (scene_id: number): void => {
   housekeepingState.game.scene_config.id = scene_id;
   housekeepingState.game.scene_config.status = 0;
+  housekeepingState.game.event_queue = [];
   console.log(`🔧 Scene ${scene_id} set`);
 };
 export const setHousekeepingSceneStatus = (status: number): void => {
@@ -226,8 +227,9 @@ export const runHousekeeping = async () => {
     housekeepingState.lastRunTime = new Date().toISOString();
     await fetchAndLogSensorData();
 
+    const scene_id = housekeepingState.game.scene_config.id;
 
-    switch (housekeepingState.game.scene_config.id) {
+    switch (scene_id) {
       case 0:
         return;
       case 1:
