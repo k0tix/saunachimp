@@ -11,7 +11,7 @@ export const handleScene1 = async (HousekeepingStatus: HousekeepingStatus): Prom
         },
         {
             event_type: 'SCENE_WIN',
-            run_at: Date.now() + 5*60*1000, // 5 minutes
+            run_at: Date.now() + 1*60*1000, // 5 minutes
         },
     ];
   }

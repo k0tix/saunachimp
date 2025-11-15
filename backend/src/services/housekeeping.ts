@@ -190,7 +190,20 @@ const fetchAndLogSensorData = async () => {
     console.error('❌ Error fetching and logging sensor data:', error);
   }
 };
-
+const checkGameEnd = () => {
+  if(
+    housekeepingState
+      .game
+      .event_queue
+      .filter(
+        (event) =>
+          event.run_at <= Date.now()
+          && (event.event_type === 'SCENE_WIN' || event.event_type === 'SCENE_LOSS')
+      ).length > 0
+    ) {
+      setHousekeepingScene(0);
+      }
+};
 // Main housekeeping runner
 export const runHousekeeping = async () => {
   // Check if housekeeping is enabled
@@ -213,7 +226,7 @@ export const runHousekeeping = async () => {
       default:
         return;
     }
-
+    checkGameEnd()
 
 
   } catch (error) {
