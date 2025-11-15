@@ -17,10 +17,11 @@ router.get('/data', async (req: Request, res: Response) => {
       });
       return;
     }
+    const data = await result.json();
 
     res.json({
       success: true,
-      data: result.json(),
+      data: data,
     });
   } catch (error) {
     res.status(500).json({
