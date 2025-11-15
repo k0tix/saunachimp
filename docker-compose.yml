@@ -35,6 +35,7 @@ services:
       DB_NAME: ${DB_NAME}
       HARVIA_API_KEY: ${HARVIA_API_KEY}
       HARVIA_DEVICE_ID: ${HARVIA_DEVICE_ID}
+      SENSOR_DATA_URL: ${SENSOR_DATA_URL}
     ports:
       - "${PORT}:${PORT}"
     depends_on:

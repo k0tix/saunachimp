@@ -122,8 +122,7 @@ export const getHousekeepingEvents = (): GameEvent[] => {
 // Fetch mock sensor data from API and log to database
 const fetchAndLogSensorData = async () => {
   try {
-    const PORT = process.env.PORT || 3000;
-    const response = await fetch(`http://localhost:${PORT}/api/mockdata/sensor`);
+    const response = await fetch(process.env.SENSOR_DATA_URL ?? '');
     
     if (!response.ok) {
       console.error(`❌ Failed to fetch mock data: ${response.status}`);
