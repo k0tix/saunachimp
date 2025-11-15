@@ -7,7 +7,7 @@ export const handleSceneEnd = async (housekeepingStatus: HousekeepingStatus): Pr
   }
   const timeOffset = Date.now() - (getHousekeepingSceneStartAt() ?? 0);
 
-  if (timeOffset> 2*60*1000) { // 2 minutes
+  if (timeOffset> 1000 * 15) { // 15 seconds
     setHousekeepingScene(0);
   }
   return [];
