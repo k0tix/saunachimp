@@ -200,14 +200,16 @@
         const container = new PIXI.Container();
         app.stage.addChild(container);
 
+        let bgSprite = null;
+
         // Load background image (Habbo sauna room)
         const bgImagePath = 'habbo_sauna_room.avif';
         
         PIXI.Assets.load(bgImagePath).then((texture) => {
-            const bg = new PIXI.Sprite(texture);
-            bg.width = app.screen.width;
-            bg.height = app.screen.height;
-            container.addChildAt(bg, 0);
+            bgSprite = new PIXI.Sprite(texture);
+            bgSprite.width = app.screen.width;
+            bgSprite.height = app.screen.height;
+            container.addChildAt(bgSprite, 0);
         }).catch(() => {
             // Fallback: Draw simple gradient background
             const gradient = new PIXI.Graphics();
@@ -223,11 +225,11 @@
         
         // Isometric spots for each product type
         const spotsBase = [
-            {type: 'kiuas', x: 550, y: 610, label: 'KIUAS', slotId: 'kiuas_1'},
-            {type: 'lauteet', x: 630, y: 420, label: 'LAUTEET', slotId: 'lauteet_1'},
-            {type: 'generic', x: 700, y: 500, label: 'OLUT', slotId: 'generic_1'},
-            {type: 'saunakauha', x: 420, y: 567, label: 'KAUHA', slotId: 'saunakauha_1'},
-            {type: 'kiilu', x: 490, y: 567, label: 'KIULU', slotId: 'kiilu_1'}
+            {type: 'kiuas', x: 435, y: 760, label: 'KIUAS', slotId: 'kiuas_1'},
+            {type: 'kiilu', x: 325, y: 685, label: 'KIULU', slotId: 'kiilu_1'},
+            {type: 'saunakauha', x: 435, y: 437, label: 'KAUHA', slotId: 'saunakauha_1'},
+            {type: 'lauteet', x: 490, y: 370, label: 'LAUTEET', slotId: 'lauteet_1'},
+            {type: 'generic', x: 580, y: 520, label: 'OLUT', slotId: 'generic_1'}
         ];
         
         let spots = spotsBase.map(s => ({...s}));
@@ -280,6 +282,23 @@
             });
         }
 
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            const newWidth = window.innerWidth - 300;
+            const newHeight = window.innerHeight;
+            
+            app.renderer.resize(newWidth, newHeight);
+            
+            // Scale background
+            if (bgSprite) {
+                bgSprite.width = newWidth;
+                bgSprite.height = newHeight;
+            }
+            
+            // Scale spots
+            scaleSpots();
+        });
+
         // Draw spots with overlay indicators
         function drawSpots() {
             spots.forEach(spot => {
@@ -289,11 +308,12 @@
                 spotGfx.lineStyle(2, 0xffff00, 0.4);
                 spotGfx.beginFill(0xffffff, 0.1);
                 const sw = 40, sh = 20;
+                // Draw diamond with bottom point at origin (0,0)
                 spotGfx.drawPolygon([
-                    0, 0,
-                    sw, sh/2,
-                    0, sh,
-                    -sw, sh/2
+                    0, 0,           // Bottom point (front-most)
+                    sw, -sh/2,      // Right point
+                    0, -sh,         // Top point
+                    -sw, -sh/2      // Left point
                 ]);
                 
                 spotGfx.x = spot.x;
@@ -308,9 +328,9 @@
                     spotGfx.beginFill(0x00ff00, 0.2);
                     spotGfx.drawPolygon([
                         0, 0,
-                        sw, sh/2,
-                        0, sh,
-                        -sw, sh/2
+                        sw, -sh/2,
+                        0, -sh,
+                        -sw, -sh/2
                     ]);
                 });
                 
@@ -321,9 +341,9 @@
                         spotGfx.beginFill(0xffffff, 0.1);
                         spotGfx.drawPolygon([
                             0, 0,
-                            sw, sh/2,
-                            0, sh,
-                            -sw, sh/2
+                            sw, -sh/2,
+                            0, -sh,
+                            -sw, -sh/2
                         ]);
                     }
                 });
@@ -337,7 +357,7 @@
                     fontWeight: 'bold'
                 });
                 label.anchor.set(0.5);
-                label.y = sh + 10;
+                label.y = 10; // Below the bottom point
                 spotGfx.addChild(label);
                 
                 container.addChild(spotGfx);
