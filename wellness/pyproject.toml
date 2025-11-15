@@ -7,5 +7,6 @@ dependencies = [
     "asyncio",
     "fastapi",
     "openai",
-    "uvicorn"
+    "uvicorn",
+    "pandas"
 ]

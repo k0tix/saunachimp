@@ -1,5 +1,6 @@
 import asyncio
 import aiomysql
+import pandas as pd
 from fastapi import FastAPI
 from pydantic import BaseModel
 from openai import AsyncOpenAI
@@ -34,16 +35,21 @@ async def fetch_sensor_logs():
     try:
         async with conn.cursor(aiomysql.DictCursor) as cur:
             await cur.execute(
-                "SELECT *"
-                "FROM sensor_logs"
-                "WHERE session_id = ("
-                    "SELECT session_id"
-                    "FROM sensor_logs"
-                    "ORDER BY sensor_timestamp DESC"
-                    "LIMIT 1"
-                ");"
+                """
+                SELECT TEMP, HUM, SENSOR_TIMESTAMP
+                FROM sensor_logs
+                WHERE session_id = (
+                    SELECT session_id
+                    FROM sensor_logs
+                    ORDER BY sensor_timestamp DESC
+                    LIMIT 1
+                );
+                """
             )
-            return await cur.fetchall()
+            rows = await cur.fetchall()
+            column_names = [desc[0] for desc in cur.description]
+            df = pd.DataFrame(rows, columns=column_names)
+            return df
     finally:
         conn.close()
 
