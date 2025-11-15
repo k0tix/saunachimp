@@ -14,7 +14,7 @@ services:
       - "${DB_PORT}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
       interval: 10s
@@ -22,7 +22,7 @@ services:
       retries: 5
 
   backend:
-    build: .
+    build: ./backend
     container_name: backend_api
     restart: unless-stopped
     environment:
@@ -39,7 +39,7 @@ services:
       mysql:
         condition: service_healthy
     volumes:
-      - ./src:/app/src
+      - ./backend/src:/app/src
       - /app/node_modules
 
 volumes:

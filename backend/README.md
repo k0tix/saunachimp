@@ -41,7 +41,10 @@ DB_ROOT_PASSWORD=rootpassword
 
 ### 3. Run with Docker Compose
 
+**Note:** Docker configuration files are now in the root directory of the project.
+
 ```bash
+# From the backend directory:
 # Start both database and API
 npm run docker:up
 
@@ -50,6 +53,15 @@ npm run docker:logs
 
 # Stop containers
 npm run docker:down
+```
+
+Or run directly from the root directory:
+
+```bash
+# From the project root:
+docker-compose up -d
+docker-compose logs -f
+docker-compose down
 ```
 
 The API will be available at `http://localhost:3000`

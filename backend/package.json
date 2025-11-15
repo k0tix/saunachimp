@@ -7,9 +7,9 @@
     "dev": "nodemon src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down",
-    "docker:logs": "docker-compose logs -f",
+    "docker:up": "cd .. && docker-compose up -d",
+    "docker:down": "cd .. && docker-compose down",
+    "docker:logs": "cd .. && docker-compose logs -f",
     "db:reset": "echo Use the API endpoint instead: curl -X POST http://localhost:3000/api/database/reset"
   },
   "keywords": ["express", "typescript", "mysql", "api"],
