@@ -42,16 +42,15 @@ class SaunaController {
     /**
      * Maps backend scene identifiers to folder names.
      * Supports both numeric ids and existing string names for backward compatibility.
-     * 1 -> loyly-game
-     * 2 -> habbo-sauna
-     * 3 -> video-loop
      */
     getSceneName(sceneIdOrName) {
         const mapping = {
             0: 'demo',
             1: 'loyly-game',
             2: 'habbo-sauna',
-            3: 'video-loop'
+            3: 'video-loop',
+            4: 'winner',
+            5: 'loser',
         };
 
         // If it's a number (or numeric string), use the mapping
