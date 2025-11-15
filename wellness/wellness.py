@@ -4,12 +4,17 @@ import pandas as pd
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from openai import AsyncOpenAI
+import logging
 
 from contextlib import asynccontextmanager
 import os
 
+app = FastAPI()
 
-client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+logger = logging.getLogger("uvicorn")
+logger.setLevel(logging.INFO)
+
+#client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 POLL_INTERVAL_SECONDS = int(os.getenv("POLL_INTERVAL_SECONDS", 60))
 DB_HOST = os.getenv("DB_HOST")
@@ -85,7 +90,19 @@ async def wellness_assessment(data_str: str):
 
 
 async def poll():
-    print("Polling loop started")
+    logger.info("Polling loop started")
+
+    while True:
+        try:
+            logger.info("lol")
+        except Exception as e:
+            logger.error(f"Error during lolling: {e}")
+
+        await asyncio.sleep(POLL_INTERVAL_SECONDS)
+
+
+async def poll2():
+    logger.info("Polling loop started")
 
     while True:
         try:
@@ -100,23 +117,19 @@ async def poll():
                     str(pending.drop(columns=["SESSION_ID"]).to_dict(orient="records")))
                 await save_result(pending["SESSION_ID"].max(), result)
             except Exception as e:
-                print(f"Error processing item with timestamp {pending['SENSOR_TIMESTAMP'].max()}: {e}")
+                logger.info(f"Error processing item with timestamp {pending['SENSOR_TIMESTAMP'].max()}: {e}")
 
         except Exception as e:
-            print(f"Worker loop error: {e}")
+            logger.info(f"Worker loop error: {e}")
 
         await asyncio.sleep(POLL_INTERVAL_SECONDS)
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
+@app.on_event("startup")
+async def startup():
+    logger.info("ASDASD wellness_api starting up...")
     asyncio.create_task(poll())
-    yield
-    print("wellness_api shutting down...")
-
-
-app = FastAPI(lifespan=lifespan)
-
+    logger.info("wellness_api shutting down...")
 
 @app.get("/wellness")
 async def wellness():
