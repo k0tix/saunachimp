@@ -139,8 +139,14 @@ router.put('/:id/toggle-use', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    // Get current status
-    const owned = await query('SELECT in_use FROM owned_products WHERE id = ?', [id]) as OwnedProduct[];
+    // Get owned product with product details
+    const owned = await query(
+      `SELECT op.*, p.item_type 
+       FROM owned_products op
+       JOIN products p ON op.product_id = p.id
+       WHERE op.id = ?`,
+      [id]
+    ) as OwnedProduct[];
     
     if (owned.length === 0) {
       res.status(404).json({
@@ -150,8 +156,21 @@ router.put('/:id/toggle-use', async (req: Request, res: Response) => {
       return;
     }
 
-    const newStatus = owned[0].in_use === 1 ? 0 : 1;
+    const currentProduct = owned[0];
+    const newStatus = currentProduct.in_use === 1 ? 0 : 1;
 
+    // If enabling this item, disable all other items of the same type for this user
+    if (newStatus === 1) {
+      await query(
+        `UPDATE owned_products op
+         JOIN products p ON op.product_id = p.id
+         SET op.in_use = 0
+         WHERE op.user_id = ? AND p.item_type = ? AND op.id != ?`,
+        [currentProduct.user_id, currentProduct.product_type, id]
+      );
+    }
+
+    // Update the current item
     await query('UPDATE owned_products SET in_use = ? WHERE id = ?', [newStatus, id]);
 
     res.json({
@@ -160,6 +179,7 @@ router.put('/:id/toggle-use', async (req: Request, res: Response) => {
       data: {
         id: parseInt(id),
         in_use: newStatus,
+        item_type: currentProduct.product_type,
       },
     });
   } catch (error) {
