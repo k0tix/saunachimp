@@ -6,6 +6,7 @@ import mockDataRoutes from './routes/mockdata';
 import controlRoutes from './routes/control';
 import databaseRoutes from './routes/database';
 import harviaRoutes from './routes/harvia';
+import ownedProductsRoutes from './routes/owned-products';
 import { startHousekeeping } from './services/housekeeping';
 
 // Load environment variables
@@ -33,6 +34,7 @@ app.use('/api/mockdata', mockDataRoutes);
 app.use('/api/control', controlRoutes);
 app.use('/api/database', databaseRoutes);
 app.use('/api/harvia', harviaRoutes);
+app.use('/api/owned-products', ownedProductsRoutes);
 
 // Root endpoint
 app.get('/', (req: Request, res: Response) => {
@@ -47,6 +49,7 @@ app.get('/', (req: Request, res: Response) => {
       housekeepingControl: '/api/control',
       databaseReset: '/api/database/reset',
       harviaSauna: '/api/harvia',
+      ownedProducts: '/api/owned-products',
     },
   });
 });

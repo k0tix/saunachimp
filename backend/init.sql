@@ -2,16 +2,49 @@ CREATE TABLE IF NOT EXISTS products (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   description TEXT,
-  price DECIMAL(10, 2) NOT NULL,
+  price INT NOT NULL,
+  item_type VARCHAR(50) NOT NULL,
+  asset_url VARCHAR(255),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+-- Users table
+CREATE TABLE IF NOT EXISTS users (
+  id VARCHAR(255) PRIMARY KEY,
+  username VARCHAR(255) NOT NULL UNIQUE,
+  email VARCHAR(255),
+  money INT DEFAULT 10000 NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_username (username)
+);
+
+-- Owned products table
+CREATE TABLE IF NOT EXISTS owned_products (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  product_id INT NOT NULL,
+  user_id VARCHAR(255) NOT NULL,
+  purchase_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  in_use TINYINT DEFAULT 0,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+);
+
+
+
+
 -- Insert sample data
-INSERT INTO products (name, description, price) VALUES
-  ('Laptop', 'High-performance laptop for developers', 1299.99),
-  ('Wireless Mouse', 'Ergonomic wireless mouse', 29.99),
-  ('Keyboard', 'Mechanical keyboard with RGB lighting', 149.99);
+INSERT INTO products (name, description, price, item_type, asset_url) VALUES
+  ('Kiuas', 'Harvia Kiuas', 1299, 'kiuas', '/assets/kiuas.jpg'),
+  ('Kupari lauteet', 'Perfect heat transfer for your sauna', 2209, 'lauteet', '/assets/lauteet.jpg'),
+  ('Olut', 'gloms', 2209, 'generic', '/assets/olut.jpg'),
+  ('saunakauha', 'saunakauha', 10, 'saunakauha', '/assets/saunakauha.jpg'),
+  ('saunakiulu', 'saunakiulu', 10, 'kiulu', '/assets/kiulu.jpg');
+
+-- Insert sample user
+INSERT INTO users (id, username, email) VALUES
+  ('user_001', 'demo_user', 'demo@example.com');
+
 
 -- Sensor logs table
 CREATE TABLE IF NOT EXISTS sensor_logs (
