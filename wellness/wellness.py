@@ -29,13 +29,19 @@ async def get_conn():
     )
 
 
-async def fetch_sensor_logs() -> List[Dict]:
-    conn = await get_src_conn()
+async def fetch_sensor_logs():
+    conn = await get_conn()
     try:
         async with conn.cursor(aiomysql.DictCursor) as cur:
             await cur.execute(
-                "SELECT id, input_text FROM sensor_logs WHERE processed = 0 ORDER BY id ASC LIMIT %s",
-                (limit,),
+                "SELECT *"
+                "FROM sensor_logs"
+                "WHERE session_id = ("
+                    "SELECT session_id"
+                    "FROM sensor_logs"
+                    "ORDER BY sensor_timestamp DESC"
+                    "LIMIT 1"
+                ");"
             )
             return await cur.fetchall()
     finally:
@@ -55,7 +61,7 @@ async def save_result_to_target(session_id: str, wellness: str):
 
 
 async def wellness_assessment():
-    pass
+    
 
 
 async def poll():
