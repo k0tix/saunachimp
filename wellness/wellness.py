@@ -74,10 +74,8 @@ async def poll():
                 text = item["input_text"]
 
                 try:
-                    result = await call_openai_assessment(text)
+                    result = await wellness_assessment(text)
                     await save_result_to_target(item_id, result)
-                    await mark_item_processed(item_id)
-                    print(f"Processed item {item_id}")
                 except Exception as e:
                     print(f"Error processing item {item_id}: {e}")
 
@@ -94,3 +92,17 @@ async def startup():
 
 @app.get("/wellness")
 async def wellness():
+    conn = await get_conn()
+    try:
+        async with conn.cursor(aiomysql.DictCursor) as cur:
+            await cur.execute(
+                "SELECT wellness FROM wellness_results ORDER BY id DESC LIMIT 1"
+            )
+            row = await cur.fetchone()
+
+            if not row:
+                raise HTTPException(status_code=404, detail="No wellness results found")
+
+            return {"wellness": row["wellness"]}
+    finally:
+        conn.close()
