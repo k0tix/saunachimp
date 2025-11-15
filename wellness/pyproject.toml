@@ -3,5 +3,10 @@ name = "saunachimp"
 version = "0.0.1"
 requires-python = "==3.10.9"
 dependencies = [
-    "mysql-connector-python"
+    "aiomysql",
+    "asyncio",
+    "dotenv",
+    "fastapi",
+    "openai",
+    "uvicorn"
 ]
