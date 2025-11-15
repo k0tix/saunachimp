@@ -125,14 +125,14 @@ const fetchAndLogSensorData = async () => {
     const response = await fetch(process.env.SENSOR_DATA_URL ?? '');
     
     if (!response.ok) {
-      console.error(`❌ Failed to fetch mock data: ${response.status}`);
+      console.error(`❌ Failed to fetch sensor data: ${response.status}`);
       return;
     }
 
     const result = await response.json() as MockDataResponse;
     
     if (!result.success || !result.data) {
-      console.error('❌ Invalid mock data response');
+      console.error('❌ Invalid sensor data response');
       return;
     }
 
