@@ -1,5 +1,6 @@
 import { query } from '../config/database';
 import { ResultSetHeader } from 'mysql2';
+import { handleScene1 } from './scenes/scene1';
 
 interface SensorData {
   heapSize: number;
@@ -30,7 +31,12 @@ interface MockDataResponse {
   };
 }
 
-interface HousekeepingStatus {
+export interface GameEvent {
+  event_type: string;
+  run_at: number;
+}
+
+export interface HousekeepingStatus {
   enabled: boolean;
   runCount: number;
   lastRunTime: string | null;
@@ -39,6 +45,12 @@ interface HousekeepingStatus {
     temp: number;
     humidity: number;
     presence: boolean;
+  };
+  game: {
+    scene_config: {
+      id: number;
+    };
+    event_queue: GameEvent[];
   };
 }
 
@@ -52,7 +64,13 @@ let housekeepingState: HousekeepingStatus = {
     temp: 0,
     humidity: 0,
     presence: false,
-  }
+  },
+  game: {
+    scene_config: {
+      id: 0,
+    },
+    event_queue: [],
+  },
 };
 
 // Get current housekeeping status
@@ -64,6 +82,15 @@ export const getHousekeepingStatus = (): HousekeepingStatus => {
 export const setHousekeepingEnabled = (enabled: boolean): void => {
   housekeepingState.enabled = enabled;
   console.log(`🔧 Housekeeping ${enabled ? 'ENABLED' : 'DISABLED'}`);
+};
+export const setHousekeepingScene = (scene_id: number): void => {
+  housekeepingState.game.scene_config.id = scene_id;
+  console.log(`🔧 Scene ${scene_id} set`);
+};
+export const getHousekeepingEvents = (): GameEvent[] => {
+  const events = housekeepingState.game.event_queue.filter((event) => event.run_at <= Date.now());
+  housekeepingState.game.event_queue = housekeepingState.game.event_queue.filter((event) => event.run_at > Date.now());
+  return events;
 };
 
 // Fetch mock sensor data from API and log to database
@@ -138,6 +165,17 @@ export const runHousekeeping = async () => {
     housekeepingState.runCount++;
     housekeepingState.lastRunTime = new Date().toISOString();
     await fetchAndLogSensorData();
+    switch (housekeepingState.game.scene_config.id) {
+      case 0:
+        return;
+      case 1:
+        housekeepingState.game.event_queue = [...housekeepingState.game.event_queue, await handleScene1(housekeepingState)] ;
+        break;
+      default:
+        return; 
+    }
+
+
 
   } catch (error) {
     console.error('❌ Housekeeping error:', error);

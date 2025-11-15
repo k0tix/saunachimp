@@ -1,5 +1,5 @@
 import { Request, Response, Router } from 'express';
-import { getHousekeepingStatus, setHousekeepingEnabled } from '../services/housekeeping';
+import { getHousekeepingEvents, getHousekeepingStatus, setHousekeepingEnabled, setHousekeepingScene } from '../services/housekeeping';
 
 const router = Router();
 
@@ -54,6 +54,23 @@ router.put('/enable', (req: Request, res: Response) => {
     data: {
       enabled,
     },
+  });
+});
+
+router.post('/scene/start/:scene_id', (req: Request, res: Response) => {
+  const scene_id = req.params.scene_id;
+  setHousekeepingScene(parseInt(scene_id));
+  res.json({
+    success: true,
+    message: `Scene ${scene_id} started`, 
+  });
+});
+
+router.get('/scene/events', (req: Request, res: Response) => {
+  const events = getHousekeepingEvents()
+  res.json({
+    success: true,
+    data: events,
   });
 });
 
