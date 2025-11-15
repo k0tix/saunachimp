@@ -100,7 +100,7 @@ async def poll():
                     str(pending.drop(columns=["SESSION_ID"]).to_dict(oriend="records")))
                 await save_result([pending["SESSION_ID"].max(), result])
             except Exception as e:
-                print(f"Error processing item with timestamp {pending["SENSOR_TIMESTAMP"].max()}: {e}")
+                print(f"Error processing item with timestamp {pending['SENSOR_TIMESTAMP'].max()}: {e}")
 
         except Exception as e:
             print(f"Worker loop error: {e}")
