@@ -1,7 +1,7 @@
 import asyncio
 import aiomysql
 import pandas as pd
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from openai import AsyncOpenAI
 
@@ -36,7 +36,7 @@ async def fetch_sensor_logs():
         async with conn.cursor(aiomysql.DictCursor) as cur:
             await cur.execute(
                 """
-                SELECT TEMP, HUM, SENSOR_TIMESTAMP
+                SELECT TEMP, HUM, SENSOR_TIMESTAMP, SESSION_ID
                 FROM sensor_logs
                 WHERE session_id = (
                     SELECT session_id
@@ -54,7 +54,7 @@ async def fetch_sensor_logs():
         conn.close()
 
 
-async def save_result_to_target(session_id: str, wellness: str):
+async def save_result(session_id: str, wellness: str):
     conn = await get_conn()
     try:
         async with conn.cursor() as cur:
@@ -66,8 +66,21 @@ async def save_result_to_target(session_id: str, wellness: str):
         conn.close()
 
 
-async def wellness_assessment():
-    
+async def wellness_assessment(data_str: str):
+    response = await client.chat.completions.create(
+        model="gpt-5",
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "You are a wellness assessment AI. Analyze the provided sauna sensor data "
+                    "and generate a very concise wellness evaluation with meaningful insights "
+                    "and recommendations."
+                ),
+            },
+            {"role": "user", "content": data_str},  # actual task/user message
+        ],
+    )
 
 
 async def poll():
@@ -81,15 +94,12 @@ async def poll():
                 await asyncio.sleep(POLL_INTERVAL_SECONDS)
                 continue
 
-            for item in pending:
-                item_id = item["id"]
-                text = item["input_text"]
-
-                try:
-                    result = await wellness_assessment(text)
-                    await save_result_to_target(item_id, result)
-                except Exception as e:
-                    print(f"Error processing item {item_id}: {e}")
+            try:
+                result = await wellness_assessment(
+                    str(pending.drop(columns=["SESSION_ID"]).to_dict(oriend="records")))
+                await save_result([pending["SESSION_ID"].max(), result])
+            except Exception as e:
+                print(f"Error processing item with timestamp {pending["SENSOR_TIMESTAMP"].max()}: {e}")
 
         except Exception as e:
             print(f"Worker loop error: {e}")
