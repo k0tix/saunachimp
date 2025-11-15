@@ -5,6 +5,7 @@ requires-python = "==3.10.9"
 dependencies = [
     "aiomysql",
     "asyncio",
+    "cryptography",
     "fastapi",
     "openai",
     "uvicorn",

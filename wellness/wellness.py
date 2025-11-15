@@ -5,10 +5,10 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from openai import AsyncOpenAI
 
+from contextlib import asynccontextmanager
 import os
 
 
-app = FastAPI()
 client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 POLL_INTERVAL_SECONDS = int(os.getenv("POLL_INTERVAL_SECONDS", 60))
@@ -97,8 +97,8 @@ async def poll():
 
             try:
                 result = await wellness_assessment(
-                    str(pending.drop(columns=["SESSION_ID"]).to_dict(oriend="records")))
-                await save_result([pending["SESSION_ID"].max(), result])
+                    str(pending.drop(columns=["SESSION_ID"]).to_dict(orient="records")))
+                await save_result(pending["SESSION_ID"].max(), result)
             except Exception as e:
                 print(f"Error processing item with timestamp {pending['SENSOR_TIMESTAMP'].max()}: {e}")
 
@@ -108,9 +108,14 @@ async def poll():
         await asyncio.sleep(POLL_INTERVAL_SECONDS)
 
 
-@app.on_event("startup")
-async def startup():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     asyncio.create_task(poll())
+    yield
+    print("wellness_api shutting down...")
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 @app.get("/wellness")
