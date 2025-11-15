@@ -4,7 +4,7 @@ class SaunaController {
         this.container = document.getElementById('scene-container');
         this.loading = document.getElementById('loading');
         this.currentScene = null;
-        this.serverUrl = 'http://localhost:3000'; // Update with your server URL
+        this.serverUrl = 'http://localhost:8080'; // Update with your server URL
     }
 
     async init() {
@@ -15,14 +15,17 @@ class SaunaController {
 
     async pollScene() {
         try {
-            const response = await fetch(`${this.serverUrl}/api/scene`);
+            const response = await fetch(`${this.serverUrl}/api/control/status`);
             const data = await response.json();
-            
-            if (data.scene !== this.currentScene) {
+            if (data.data.scene !== this.currentScene) {
                 // Map numeric scene ids from backend to scene folder names
-                const sceneName = this.getSceneName(data.scene);
-                this.loadScene(sceneName, data.config);
-                this.currentScene = data.scene;
+                const sceneName = this.getSceneName(data.data.scene);
+                if(sceneName === 'demo') {
+                    this.loadDemoScene(true);
+                } else {
+                    this.loadScene(sceneName, data.data.info);
+                }
+                this.currentScene = data.data.scene;
             }
         } catch (error) {
             console.error('Failed to fetch scene:', error);
@@ -40,6 +43,7 @@ class SaunaController {
      */
     getSceneName(sceneIdOrName) {
         const mapping = {
+            0: 'demo',
             1: 'loyly-game',
             2: 'habbo-sauna',
             3: 'video-loop'
@@ -79,9 +83,9 @@ class SaunaController {
         };
     }
 
-    loadDemoScene() {
+    loadDemoScene(force = false) {
         // Load a demo scene for development
-        if (!this.currentScene) {
+        if (!this.currentScene || force) {
             this.loadScene('video-loop', {
                 videoUrl: 'https://example.com/sauna-video.mp4',
                 text: 'Welcome to the Sauna!',

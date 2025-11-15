@@ -1,5 +1,5 @@
 import { Request, Response, Router } from 'express';
-import { getHousekeepingEvents, getHousekeepingStatus, setHousekeepingEnabled, setHousekeepingScene } from '../services/housekeeping';
+import { getHousekeepingEvents, getHousekeepingScene, getHousekeepingStatus, setHousekeepingEnabled, setHousekeepingScene } from '../services/housekeeping';
 
 const router = Router();
 
@@ -9,6 +9,7 @@ router.get('/status', (req: Request, res: Response) => {
   res.json({
     success: true,
     data: {
+      scene: getHousekeepingScene(),
       enabled: status.enabled,
       runCount: status.runCount,
       lastRunTime: status.lastRunTime,
