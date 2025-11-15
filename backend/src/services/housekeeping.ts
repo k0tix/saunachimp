@@ -113,7 +113,9 @@ export const getHousekeepingSceneStartAt = (): number | null => {
 };
 export const getHousekeepingEvents = (): GameEvent[] => {
   const events = housekeepingState.game.event_queue.filter((event) => event.run_at <= Date.now());
-  housekeepingState.game.event_queue = housekeepingState.game.event_queue.filter((event) => event.run_at > Date.now());
+  housekeepingState.game.event_queue = housekeepingState.game.event_queue.filter(
+    (event) => event.run_at > Date.now() || event.event_type === 'SCENE_WIN' || event.event_type === 'SCENE_LOSS'
+  );
   return events;
 };
 

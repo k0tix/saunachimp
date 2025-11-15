@@ -1,6 +1,6 @@
 import { GameEvent, getHousekeepingSceneStartAt, getHousekeepingSceneStatus, HousekeepingStatus, setHousekeepingScene, setHousekeepingSceneStartAt, setHousekeepingSceneStatus, } from "../housekeeping";
 
-export const handleScene1 = async (HousekeepingStatus: HousekeepingStatus): Promise<GameEvent[]> => {
+export const handleScene1 = async (housekeepingStatus: HousekeepingStatus): Promise<GameEvent[]> => {
   if (getHousekeepingSceneStatus() === 0) {
     setHousekeepingSceneStatus(1);
     setHousekeepingSceneStartAt(Date.now());
@@ -17,7 +17,7 @@ export const handleScene1 = async (HousekeepingStatus: HousekeepingStatus): Prom
   }
   const timeOffset = Date.now() - (getHousekeepingSceneStartAt() ?? 0);
 
-  if (HousekeepingStatus.info.loyly) {
+  if (housekeepingStatus.info.loyly) {
     // add update user money
     setHousekeepingSceneStatus(getHousekeepingSceneStatus() + 1);
 

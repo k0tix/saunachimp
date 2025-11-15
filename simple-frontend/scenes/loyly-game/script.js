@@ -72,7 +72,7 @@ class LoylyGame {
     }
 
     throwLoyly() {
-        if (!this.isCharging || this.isThrowingAnimating) return;
+        //if (!this.isCharging || this.isThrowingAnimating) return;
         
         this.stopCharging();
         this.isThrowingAnimating = true;
@@ -182,6 +182,12 @@ const game = new LoylyGame();
 window.addEventListener('message', (event) => {
     if (event.data.type === 'SCENE_CONFIG') {
         game.init(event.data.config);
+    }
+    if (event.data.type === 'SCENE_API_EVENT') {
+        console.log(event.data.event);
+        if(event.data.event === 'THROW_LOYLY') {
+            game.throwLoyly();
+        }
     }
 });
 

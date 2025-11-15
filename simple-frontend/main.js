@@ -1,6 +1,7 @@
 // Main controller for loading scenes from server
 class SaunaController {
     constructor() {
+        this.iframeRef = null;
         this.container = document.getElementById('scene-container');
         this.loading = document.getElementById('loading');
         this.currentScene = null;
@@ -21,6 +22,18 @@ class SaunaController {
     async pollScene() {
         try {
             const response = await fetch(`${this.serverUrl}/api/control/status`);
+            const eventResponse = await fetch(`${this.serverUrl}/api/control/scene/events`);
+            
+            const events = await eventResponse.json();
+            events.data.forEach(event => {
+                if(this.iframeRef !== null) {
+                    this.iframeRef.contentWindow.postMessage({
+                        type: 'SCENE_API_EVENT',
+                        event: event.event_type
+                    }, '*');
+                }
+            })
+            
             const data = await response.json();
             if (data.data.scene !== this.currentScene) {
                 // Map numeric scene ids from backend to scene folder names
@@ -73,6 +86,7 @@ class SaunaController {
         
         // Create iframe for the scene
         const iframe = document.createElement('iframe');
+        this.iframeRef = iframe;
         iframe.src = `scenes/${sceneName}/index.html`;
         
         // Clear container and load new scene
