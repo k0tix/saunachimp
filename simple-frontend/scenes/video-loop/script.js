@@ -4,7 +4,20 @@ class VideoLoopScene {
         this.video = document.getElementById('background-video');
         this.mainText = document.getElementById('main-text');
         this.subText = document.getElementById('sub-text');
+        this.gameMenu =  document.getElementById('game-menu');
         this.config = null;
+        var elements = document.getElementsByClassName("game-menu-button");
+
+        var handleGameMenuClick = function() {
+            window.parent.postMessage({
+                type: 'CHANGE_SCENE',
+                scene: this.getAttribute("data-scene")
+            }, '*');
+        };
+
+        for (var i = 0; i < elements.length; i++) {
+            elements[i].addEventListener('click', handleGameMenuClick, false);
+        }
     }
 
     init(config) {
@@ -23,6 +36,11 @@ class VideoLoopScene {
         // Set text content
         this.mainText.textContent = config.text || 'Welcome to the Sauna!';
         this.subText.textContent = config.subText || '';
+        if(config.showMenu) {
+            this.gameMenu.style.display = 'block';
+        } else {
+            this.gameMenu.style.display = 'none';
+        }
         
         // Auto-advance if duration is set
         if (config.duration) {
@@ -56,6 +74,7 @@ if (window === window.parent) {
         videoUrl: '',
         text: 'Sauna Experience',
         subText: 'Relax and enjoy the heat',
+        showMenu: false,
         duration: null
     });
 }

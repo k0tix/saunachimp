@@ -11,6 +11,11 @@ class SaunaController {
         // Poll server for scene updates
         this.pollScene();
         setInterval(() => this.pollScene(), 2000); // Poll every 2 seconds
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'CHANGE_SCENE') {
+                fetch(`${this.serverUrl}/api/control/scene/start/${event.data.scene}`,{method: 'POST'});
+            }
+        });
     }
 
     async pollScene() {
@@ -89,7 +94,8 @@ class SaunaController {
             this.loadScene('video-loop', {
                 videoUrl: 'https://example.com/sauna-video.mp4',
                 text: 'Welcome to the Sauna!',
-                duration: 30
+                duration: 30,
+                showMenu: true
             });
             this.currentScene = 'demo';
         }
