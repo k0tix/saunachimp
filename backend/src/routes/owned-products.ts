@@ -18,17 +18,9 @@ interface OwnedProduct extends RowDataPacket {
 }
 
 // POST purchase a product
-router.post('/purchase', async (req: Request, res: Response) => {
+router.post('/purchase/:user_id/:product_id', async (req: Request, res: Response) => {
   try {
-    const { product_id, user_id } = req.body;
-
-    if (!product_id || !user_id) {
-      res.status(400).json({
-        success: false,
-        message: 'product_id and user_id are required',
-      });
-      return;
-    }
+    const { user_id, product_id } = req.params;
 
     // Check if product exists
     const products = await query('SELECT * FROM products WHERE id = ?', [product_id]) as RowDataPacket[];
@@ -141,13 +133,13 @@ router.put('/:id/toggle-use', async (req: Request, res: Response) => {
 
     // Get owned product with product details
     const owned = await query(
-      `SELECT op.*, p.item_type 
+      `SELECT op.*, p.item_type as product_type
        FROM owned_products op
        JOIN products p ON op.product_id = p.id
        WHERE op.id = ?`,
       [id]
     ) as OwnedProduct[];
-    
+
     if (owned.length === 0) {
       res.status(404).json({
         success: false,
@@ -169,10 +161,8 @@ router.put('/:id/toggle-use', async (req: Request, res: Response) => {
         [currentProduct.user_id, currentProduct.product_type, id]
       );
     }
-
     // Update the current item
     await query('UPDATE owned_products SET in_use = ? WHERE id = ?', [newStatus, id]);
-
     res.json({
       success: true,
       message: `Product marked as ${newStatus === 1 ? 'in use' : 'not in use'}`,
