@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Position Finder</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #000;
+            font-family: 'Courier New', monospace;
+            color: #fff;
+        }
+        #info {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.9);
+            color: #0f0;
+            padding: 15px 30px;
+            font-size: 18px;
+            border: 3px solid #0f0;
+            z-index: 1000;
+        }
+        #instructions {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(233, 69, 96, 0.9);
+            color: white;
+            padding: 15px;
+            font-size: 12px;
+            border: 2px solid #000;
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">X: 0, Y: 0</div>
+    <div id="instructions">
+        DRAG THE RED MARKER<br>
+        Position shows at top<br>
+        Console (F12) logs positions
+    </div>
+    <script>
+        const app = new PIXI.Application({
+            width: window.innerWidth,
+            height: window.innerHeight,
+            backgroundColor: 0x000000
+        });
+        document.body.appendChild(app.view);
+
+        // Load background
+        PIXI.Assets.load('habbo_sauna_room.avif').then((texture) => {
+            const bg = new PIXI.Sprite(texture);
+            bg.width = app.screen.width;
+            bg.height = app.screen.height;
+            app.stage.addChild(bg);
+        }).catch(() => {
+            console.log('Add habbo_sauna_room.avif to folder');
+        });
+
+        // Create draggable marker
+        const marker = new PIXI.Graphics();
+        marker.beginFill(0xff0000);
+        marker.drawCircle(0, 0, 20);
+        marker.beginFill(0xffffff);
+        marker.drawCircle(0, 0, 5);
+        marker.x = 400;
+        marker.y = 300;
+        marker.interactive = true;
+        marker.buttonMode = true;
+
+        app.stage.addChild(marker);
+
+        const infoDisplay = document.getElementById('info');
+
+        // Drag functionality
+        let dragging = false;
+
+        marker.on('mousedown', () => {
+            dragging = true;
+            marker.alpha = 0.7;
+        });
+
+        marker.on('mousemove', (e) => {
+            if (dragging) {
+                const pos = e.data.getLocalPosition(app.stage);
+                marker.x = pos.x;
+                marker.y = pos.y;
+                updateInfo();
+            }
+        });
+
+        marker.on('mouseup', () => {
+            dragging = false;
+            marker.alpha = 1;
+            console.log(`x: ${Math.round(marker.x)}, y: ${Math.round(marker.y)}`);
+        });
+
+        marker.on('mouseupoutside', () => {
+            dragging = false;
+            marker.alpha = 1;
+        });
+
+        function updateInfo() {
+            const x = Math.round(marker.x);
+            const y = Math.round(marker.y);
+            infoDisplay.textContent = `X: ${x}, Y: ${y}`;
+        }
+
+        updateInfo();
+    </script>
+</body>
+</html>
+
