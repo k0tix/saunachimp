@@ -173,6 +173,7 @@
             </div>
 
             <button class="btn" id="clearBtn">CLEAR</button>
+            <button class="btn" id="exitBtn">EXIT TO MENU</button>
             
             <div class="inventory">
                 <div class="section-title">COLLECTION</div>
@@ -650,6 +651,14 @@
                 });
             });
             log('CLEARED');
+        };
+
+        document.getElementById('exitBtn').onclick = () => {
+            window.parent.postMessage({
+                type: 'CHANGE_SCENE',
+                scene: 0
+            }, '*');
+            log('EXITING TO MENU...');
         };
 
         function log(msg) {
