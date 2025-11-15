@@ -9,6 +9,17 @@ CREATE TABLE IF NOT EXISTS products (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+-- Users table
+CREATE TABLE IF NOT EXISTS users (
+  id VARCHAR(255) PRIMARY KEY,
+  username VARCHAR(255) NOT NULL UNIQUE,
+  email VARCHAR(255),
+  money INT DEFAULT 10000 NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_username (username)
+);
+
 -- Owned products table
 CREATE TABLE IF NOT EXISTS owned_products (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -17,7 +28,6 @@ CREATE TABLE IF NOT EXISTS owned_products (
   purchase_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   in_use TINYINT DEFAULT 0,
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
 );
 
 
@@ -30,6 +40,10 @@ INSERT INTO products (name, description, price, item_type) VALUES
   ('Olut', 'gloms', 2209.99, 'generic', '/assets/olut.jpg'),
   ('saunakauha', 'saunakauha', 10.99, 'saunakauha', '/assets/saunakauha.jpg'),
   ('saunakiulu', 'saunakiulu', 10.99, 'kiulu', '/assets/kiulu.jpg');
+
+-- Insert sample user
+INSERT INTO users (id, username, email) VALUES
+  ('user_001', 'demo_user', 'demo@example.com');
 
 
 -- Sensor logs table
