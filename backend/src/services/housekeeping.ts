@@ -51,6 +51,7 @@ export interface HousekeepingStatus {
     scene_config: {
       status: number;
       id: number;
+      start_at: number | null;
     };
     event_queue: GameEvent[];
   };
@@ -71,7 +72,8 @@ let housekeepingState: HousekeepingStatus = {
   game: {
     scene_config: {
       id: 0,
-      status: 0
+      status: 0,
+      start_at: null,
     },
     event_queue: [],
   },
@@ -101,6 +103,13 @@ export const getHousekeepingSceneStatus = (): number => {
 };
 export const getHousekeepingScene = (): number => {
   return housekeepingState.game.scene_config.id;
+};
+export const setHousekeepingSceneStartAt = (start_at: number): void => {
+  housekeepingState.game.scene_config.start_at = start_at;
+  console.log(`🔧 Scene start at ${start_at} set`);
+};
+export const getHousekeepingSceneStartAt = (): number | null => {
+  return housekeepingState.game.scene_config.start_at;
 };
 export const getHousekeepingEvents = (): GameEvent[] => {
   const events = housekeepingState.game.event_queue.filter((event) => event.run_at <= Date.now());
@@ -199,10 +208,10 @@ export const runHousekeeping = async () => {
       case 0:
         return;
       case 1:
-        housekeepingState.game.event_queue = [...housekeepingState.game.event_queue, await handleScene1(housekeepingState)] ;
+        housekeepingState.game.event_queue = [...housekeepingState.game.event_queue, ...(await handleScene1(housekeepingState))] ;
         break;
       default:
-        return;  
+        return;
     }
 
 
