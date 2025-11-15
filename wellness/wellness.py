@@ -78,9 +78,10 @@ async def wellness_assessment(data_str: str):
                     "and recommendations."
                 ),
             },
-            {"role": "user", "content": data_str},  # actual task/user message
+            {"role": "user", "content": data_str},
         ],
     )
+    return response.choices[0].message.content
 
 
 async def poll():
