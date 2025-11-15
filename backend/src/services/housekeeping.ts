@@ -35,6 +35,11 @@ interface HousekeepingStatus {
   runCount: number;
   lastRunTime: string | null;
   intervalMs: number;
+  info: {
+    temp: number;
+    humidity: number;
+    presence: boolean;
+  };
 }
 
 // Housekeeping state
@@ -43,6 +48,11 @@ let housekeepingState: HousekeepingStatus = {
   runCount: 0,
   lastRunTime: null,
   intervalMs: 10000,
+  info: {
+    temp: 0,
+    humidity: 0,
+    presence: false,
+  }
 };
 
 // Get current housekeeping status
@@ -75,7 +85,11 @@ const fetchAndLogSensorData = async () => {
     }
 
     const { data } = result;
-    
+    housekeepingState.info = {
+      temp: data.data.temp,
+      humidity: data.data.hum,
+      presence: data.data.presence > 0,
+    };
     // Insert sensor data into database
     await query(
       `INSERT INTO sensor_logs (
@@ -124,6 +138,7 @@ export const runHousekeeping = async () => {
     housekeepingState.runCount++;
     housekeepingState.lastRunTime = new Date().toISOString();
     await fetchAndLogSensorData();
+
   } catch (error) {
     console.error('❌ Housekeeping error:', error);
   }

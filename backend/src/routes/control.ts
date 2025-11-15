@@ -13,6 +13,7 @@ router.get('/status', (req: Request, res: Response) => {
       runCount: status.runCount,
       lastRunTime: status.lastRunTime,
       intervalMs: status.intervalMs,
+      info: status.info,
     },
   });
 });
