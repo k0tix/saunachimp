@@ -33,6 +33,8 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
+      HARVIA_API_KEY: ${HARVIA_API_KEY}
+      HARVIA_DEVICE_ID: ${HARVIA_DEVICE_ID}
     ports:
       - "${PORT}:${PORT}"
     depends_on:
