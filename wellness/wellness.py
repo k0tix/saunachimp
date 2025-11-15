@@ -2,27 +2,32 @@ import asyncio
 import aiomysql
 from fastapi import FastAPI
 from pydantic import BaseModel
-from dotenv import load_dotenv
 from openai import AsyncOpenAI
 
 import os
 
-load_dotenv()
 
 app = FastAPI()
 client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 POLL_INTERVAL_SECONDS = int(os.getenv("POLL_INTERVAL_SECONDS", 60))
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = int(os.getenv("DB_PORT", 3306))
+DB_USER = os.getenv("DB_USER")
+DB_PWD = os.getenv("DB_PASSWORD")
+DB_NAME = os.getenv("DB_NAME")
+
 
 async def get_conn():
     return await aiomysql.connect(
-        host=os.getenv("DB_HOST"),
-        port=int(os.getenv("DB_PORT", 3306)),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        db=os.getenv("DB_NAME"),
+        host=DB_HOST,
+        port=DB_PORT,
+        user=DB_USER,
+        password=DB_PWD,
+        db=DB_NAME,
         autocommit=True,
     )
+
 
 async def fetch_sensor_logs() -> List[Dict]:
     conn = await get_src_conn()
@@ -37,32 +42,28 @@ async def fetch_sensor_logs() -> List[Dict]:
         conn.close()
 
 
-async def mark_item_processed(item_id: int):
-    conn = await get_src_conn()
-    try:
-        async with conn.cursor() as cur:
-            await cur.execute("UPDATE pending_items SET processed = 1 WHERE id = %s", (item_id,))
-    finally:
-        conn.close()
-
-
-async def save_result_to_target(source_id: int, result_text: str):
-    conn = await get_dst_conn()
+async def save_result_to_target(session_id: str, wellness: str):
+    conn = await get_conn()
     try:
         async with conn.cursor() as cur:
             await cur.execute(
-                "INSERT INTO assessment_results (source_id, result_text) VALUES (%s, %s)",
-                (source_id, result_text),
+                "INSERT INTO wellness_results (session_id, wellness) VALUES (%s, %s)",
+                (session_id, wellness),
             )
     finally:
         conn.close()
+
+
+async def wellness_assessment():
+    pass
+
 
 async def poll():
     print("Polling loop started")
 
     while True:
         try:
-            pending = await fetch_pending_items(limit=10)
+            pending = await fetch_sensor_logs()
 
             if not pending:
                 await asyncio.sleep(POLL_INTERVAL_SECONDS)
@@ -85,9 +86,11 @@ async def poll():
 
         await asyncio.sleep(POLL_INTERVAL_SECONDS)
 
+
 @app.on_event("startup")
 async def startup():
     asyncio.create_task(poll())
+
 
 @app.get("/wellness")
 async def wellness():
