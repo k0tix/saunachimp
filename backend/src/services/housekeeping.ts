@@ -174,7 +174,7 @@ const fetchAndLogSensorData = async () => {
         data.data.rssi,
         data.data.tempEsp,
         data.data.targetTemp,
-        data.data.presence,
+        data.data.presence > 0 ? 1 : 0,
         data.data.temp,
         data.data.saunaStatus,
         data.data.batteryLoadV,
