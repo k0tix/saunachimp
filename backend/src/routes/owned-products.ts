@@ -41,7 +41,10 @@ router.post('/purchase', async (req: Request, res: Response) => {
       return;
     }
 
-    // Check if user exists
+    const product = products[0];
+    const productPrice = parseInt(product.price);
+
+    // Check if user exists and get their money
     const users = await query('SELECT * FROM users WHERE id = ?', [user_id]) as RowDataPacket[];
     
     if (users.length === 0) {
@@ -51,6 +54,27 @@ router.post('/purchase', async (req: Request, res: Response) => {
       });
       return;
     }
+
+    const user = users[0];
+    const userMoney = parseInt(user.money);
+
+    // Check if user has enough money
+    if (userMoney < productPrice) {
+      res.status(400).json({
+        success: false,
+        message: 'Insufficient funds',
+        data: {
+          required: productPrice,
+          available: userMoney,
+          shortfall: productPrice - userMoney,
+        },
+      });
+      return;
+    }
+
+    // Deduct money from user
+    const newBalance = userMoney - productPrice;
+    await query('UPDATE users SET money = ? WHERE id = ?', [newBalance, user_id]);
 
     // Add to owned products
     const result = await query(
@@ -65,7 +89,12 @@ router.post('/purchase', async (req: Request, res: Response) => {
         id: result.insertId,
         product_id,
         user_id,
-        product: products[0],
+        product: product,
+        transaction: {
+          price_paid: productPrice,
+          previous_balance: userMoney,
+          new_balance: newBalance,
+        },
       },
     });
   } catch (error) {
