@@ -4,17 +4,18 @@ import pandas as pd
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from openai import AsyncOpenAI
-import logging
 
 from contextlib import asynccontextmanager
+import logging
 import os
+
 
 app = FastAPI()
 
-logger = logging.getLogger("uvicorn")
+logger = logging.getLogger("logger")
 logger.setLevel(logging.INFO)
 
-#client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 POLL_INTERVAL_SECONDS = int(os.getenv("POLL_INTERVAL_SECONDS", 60))
 DB_HOST = os.getenv("DB_HOST")
@@ -94,18 +95,6 @@ async def poll():
 
     while True:
         try:
-            logger.info("lol")
-        except Exception as e:
-            logger.error(f"Error during lolling: {e}")
-
-        await asyncio.sleep(POLL_INTERVAL_SECONDS)
-
-
-async def poll2():
-    logger.info("Polling loop started")
-
-    while True:
-        try:
             pending = await fetch_sensor_logs()
 
             if not pending:
@@ -130,6 +119,7 @@ async def startup():
     logger.info("ASDASD wellness_api starting up...")
     asyncio.create_task(poll())
     logger.info("wellness_api shutting down...")
+
 
 @app.get("/wellness")
 async def wellness():
