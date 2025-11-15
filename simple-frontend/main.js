@@ -64,6 +64,7 @@ class SaunaController {
             3: 'video-loop',
             4: 'winner',
             5: 'loser',
+            6: 'fireworks-winner',
         };
 
         // If it's a number (or numeric string), use the mapping

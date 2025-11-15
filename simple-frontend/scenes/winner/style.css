@@ -1,60 +1,51 @@
-.winner-container {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
+body {
+    margin: 0;
     overflow: hidden;
+    background-color: #0d0d1a;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: #ffffff;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(circle at top, #ffeaa7 0, #fdcb6e 30%, #d63031 100%);
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    height: 100vh;
 }
 
-.winner-text {
-    position: relative;
-    z-index: 2;
-    font-size: clamp(3rem, 8vw, 6rem);
-    font-weight: 900;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: #fff;
-    text-shadow: 0 0 20px rgba(0,0,0,0.6), 0 0 40px rgba(255,255,255,0.8);
-    padding: 1rem 2rem;
-    border-radius: 999px;
-    background: rgba(0,0,0,0.25);
-    border: 3px solid rgba(255,255,255,0.6);
-    backdrop-filter: blur(8px);
-}
-
-#confetti-canvas {
-    position: absolute;
-    inset: 0;
+#fireworks-canvas {
+    display: block;
+    background-color: transparent;
     width: 100%;
     height: 100%;
-    pointer-events: none;
-    z-index: 1;
 }
 
-#explosions-container {
+#controls {
     position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 1;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.5);
+    padding: 10px 15px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 10;
 }
 
-.explosion {
+.control-text {
+    font-size: 14px;
+    font-weight: 400;
+}
+
+#winner-text {
     position: absolute;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: radial-gradient(circle, #fff 0, #ffeaa7 40%, #e17055 100%);
-    box-shadow: 0 0 20px rgba(255,255,255,0.9);
-    transform: scale(0);
-    animation: explode 700ms ease-out forwards;
-}
-
-@keyframes explode {
-    0% { transform: scale(0); opacity: 1; }
-    70% { transform: scale(5); opacity: 1; }
-    100% { transform: scale(6); opacity: 0; }
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 10vw;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px #ff00ff, 0 0 40px #ff00ff, 0 0 50px #ff00ff;
+    z-index: 5;
+    pointer-events: none;
 }
