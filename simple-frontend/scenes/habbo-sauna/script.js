@@ -219,7 +219,12 @@
                 grid.appendChild(div);
             });
         }
-
+        document.getElementById('exitBtn').addEventListener('click', () => {
+            window.parent.postMessage({
+                type: 'CHANGE_SCENE',
+                scene: 0
+            }, '*');
+        });
         async function init() {
             await getOwnedItems();
             await loadImages()
