@@ -1,6 +1,7 @@
 import { query } from '../config/database';
 import { handleScene1 } from './scenes/scene1';
 import { handleSceneEnd } from './scenes/scene_end';
+import { handleSceneGuitarHero } from './scenes/scene_guitar_hero';
 
 const HUM_CHANGE_THRESHOLD = 10;
 interface SensorData {
@@ -234,6 +235,9 @@ export const runHousekeeping = async () => {
         return;
       case 1:
         housekeepingState.game.event_queue = [...housekeepingState.game.event_queue, ...(await handleScene1(housekeepingState))] ;
+        break;
+      case 7:
+        housekeepingState.game.event_queue = [...housekeepingState.game.event_queue, ...(await handleSceneGuitarHero(housekeepingState))];
         break;
       case 4:
       case 5:

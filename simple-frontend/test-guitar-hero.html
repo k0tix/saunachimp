@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guitar Hero Scene - Test Page</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            color: white;
+            overflow: hidden;
+        }
+
+        .test-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .test-header {
+            background: #2a2a2a;
+            padding: 15px 30px;
+            border-bottom: 2px solid #ff6b00;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .test-header h1 {
+            font-size: 1.5rem;
+            color: #ff6b00;
+        }
+
+        .test-controls {
+            display: flex;
+            gap: 15px;
+        }
+
+        .test-btn {
+            padding: 10px 20px;
+            background: #ff6b00;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .test-btn:hover {
+            background: #ff8533;
+            transform: translateY(-2px);
+        }
+
+        .test-btn:active {
+            transform: translateY(0);
+        }
+
+        .scene-frame {
+            flex: 1;
+            border: none;
+            width: 100%;
+            height: 100%;
+        }
+
+        .info-panel {
+            position: absolute;
+            top: 80px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #ff6b00;
+            max-width: 300px;
+            z-index: 1000;
+        }
+
+        .info-panel h3 {
+            color: #ff6b00;
+            margin-bottom: 10px;
+        }
+
+        .info-panel p {
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .info-panel code {
+            background: #333;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #ffcc00;
+        }
+
+        .event-log {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #ff6b00;
+            max-width: 400px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .event-log h4 {
+            color: #ff6b00;
+            margin-bottom: 10px;
+        }
+
+        .event-item {
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+            padding: 5px;
+            background: #2a2a2a;
+            border-radius: 3px;
+        }
+
+        .event-time {
+            color: #ffcc00;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1>🎸 Löyly Hero - Test Page</h1>
+            <div class="test-controls">
+                <button class="test-btn" onclick="reloadScene()">🔄 Reload Scene</button>
+                <button class="test-btn" onclick="sendEvent('START_SCENE')">▶️ Start</button>
+                <button class="test-btn" onclick="sendEvent('THROW_LOYLY')">💧 Löyly</button>
+                <button class="test-btn" onclick="sendEvent('SCENE_WIN')">🏆 Win</button>
+            </div>
+        </div>
+
+        <iframe id="scene-frame" class="scene-frame" src="scenes/guitar-hero/index.html"></iframe>
+
+        <div class="info-panel">
+            <h3>Scene Info</h3>
+            <p><strong>Scene ID:</strong> 7</p>
+            <p><strong>Duration:</strong> ~30 seconds</p>
+            <p><strong>Note Types:</strong></p>
+            <ul>
+                <li>💧 Normal (100 pts)</li>
+                <li>🔥 Fire (200 pts)</li>
+                <li>💎 Mega (500 pts)</li>
+            </ul>
+            <p style="margin-top: 10px;"><strong>API Start:</strong></p>
+            <p><code>POST /api/control/scene/start/7</code></p>
+        </div>
+
+        <div class="event-log">
+            <h4>Event Log</h4>
+            <div id="event-list"></div>
+        </div>
+    </div>
+
+    <script>
+        const iframe = document.getElementById('scene-frame');
+        const eventList = document.getElementById('event-list');
+        const events = [];
+
+        function logEvent(message) {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString();
+            events.unshift({ time: timeStr, message });
+            
+            if (events.length > 10) events.pop();
+            
+            eventList.innerHTML = events.map(e => 
+                `<div class="event-item">
+                    <span class="event-time">[${e.time}]</span>
+                    ${e.message}
+                </div>`
+            ).join('');
+        }
+
+        function reloadScene() {
+            iframe.src = iframe.src;
+            logEvent('🔄 Scene reloaded');
+        }
+
+        function sendEvent(eventType) {
+            iframe.contentWindow.postMessage({
+                type: 'SCENE_API_EVENT',
+                event: eventType
+            }, '*');
+            logEvent(`📤 Sent event: ${eventType}`);
+        }
+
+        // Listen for messages from the iframe
+        window.addEventListener('message', (event) => {
+            if (event.source === iframe.contentWindow) {
+                logEvent(`📥 Received: ${JSON.stringify(event.data)}`);
+            }
+        });
+
+        // Auto-send config after iframe loads
+        iframe.onload = () => {
+            setTimeout(() => {
+                iframe.contentWindow.postMessage({
+                    type: 'SCENE_CONFIG',
+                    config: {
+                        testMode: true
+                    }
+                }, '*');
+                logEvent('✅ Scene loaded and configured');
+            }, 100);
+        };
+
+        logEvent('🎮 Test page initialized');
+    </script>
+</body>
+</html>
