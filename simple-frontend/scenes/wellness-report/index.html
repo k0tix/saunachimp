@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Wellness Report</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="wr-root" class="wr-container">
+    <h1 class="wr-title">🧘 Wellness Report</h1>
+    <div class="wr-controls">
+      <input id="session-input" placeholder="Session ID (optional)" />
+      <button id="fetch-btn">Fetch</button>
+      <button id="latest-btn">Latest per Session</button>
+    </div>
+    <div id="status" class="wr-status">Idle...</div>
+    <div id="results" class="wr-results"></div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>

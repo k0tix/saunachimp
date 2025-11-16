@@ -53,9 +53,31 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        .scene-toolbar {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            display: flex;
+            gap: 8px;
+            z-index: 1000;
+        }
+        .scene-btn {
+            padding: 8px 14px;
+            background:#ff6b35;
+            color:#fff;
+            border:none;
+            border-radius:6px;
+            font-size:14px;
+            cursor:pointer;
+        }
+        .scene-btn:hover { background:#ff854f; }
     </style>
 </head>
 <body>
+    <div class="scene-toolbar">
+        <button class="scene-btn" onclick="startWellnessScene()">Wellness Report</button>
+    </div>
     <div id="scene-container">
         <div id="loading">
             <div class="spinner"></div>
@@ -64,5 +86,12 @@
     </div>
     
     <script src="main.js"></script>
+    <script>
+        function startWellnessScene() {
+            // Use controller.serverUrl if available, fallback to default proxy host
+            const base = (window.controller && window.controller.serverUrl) || 'http://localhost:8080';
+            fetch(`${base}/api/control/scene/start/8`, { method: 'POST' });
+        }
+    </script>
 </body>
 </html>
