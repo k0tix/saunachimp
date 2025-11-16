@@ -1,0 +1,447 @@
+# SaunaChimp Scene Development Rules
+
+## Project Overview
+
+SaunaChimp is a modular, server-driven interactive sauna experience platform built for Junction 2025 hackathon. It uses vanilla JavaScript (no frameworks) with an iframe-based scene system.
+
+## Architecture Overview
+
+### High-Level Flow
+```
+Backend (Node.js/Express/TypeScript) 
+  ↕️ (REST API polling every 2s)
+Main Controller (main.js)
+  ↕️ (postMessage API)
+Scene iframes (isolated HTML/CSS/JS modules)
+```
+
+### Communication Pattern
+
+1. **Main Controller → Backend**: Polls `/api/control/status` every 2 seconds
+2. **Backend → Main Controller**: Returns current scene ID and config
+3. **Main Controller → Scene**: Sends config via `postMessage` with type `SCENE_CONFIG`
+4. **Backend → Main Controller**: Events via `/api/control/scene/events`
+5. **Main Controller → Scene**: Forwards events via `postMessage` with type `SCENE_API_EVENT`
+6. **Scene → Main Controller**: Sends completion via `postMessage` with type `SCENE_COMPLETE`
+7. **Scene → Main Controller**: Can request scene changes via `postMessage` with type `CHANGE_SCENE`
+
+## Scene Registration
+
+### Backend Scene Mapping
+Update `main.js` getSceneName() mapping:
+```javascript
+const mapping = {
+    0: 'demo',
+    1: 'loyly-game',
+    2: 'habbo-sauna',
+    3: 'video-loop',
+    4: 'winner',
+    5: 'loser',
+    6: 'fireworks-winner',
+    // Add new scene ID here
+};
+```
+
+### Scene ID Assignment
+- 0: Demo/fallback scene
+- 1-6: Current scenes
+- 7+: Available for new scenes
+
+## Scene Structure Requirements
+
+### File Structure
+Every scene MUST have this structure:
+```
+scenes/
+└── your-scene-name/
+    ├── index.html    # Scene markup
+    ├── script.js     # Scene controller class
+    └── style.css     # Scene styles (optional)
+```
+
+### HTML Template (index.html)
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Scene Name</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="scene-wrapper">
+        <!-- Your scene content -->
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
+```
+
+### JavaScript Pattern (script.js)
+
+**MANDATORY STRUCTURE:**
+```javascript
+// 1. Scene Class Definition
+class YourSceneName {
+    constructor() {
+        // Initialize DOM references
+        // Setup event listeners (internal only)
+        // Initialize state variables
+    }
+
+    init(config) {
+        // Store config
+        this.config = config;
+        
+        // Apply server configuration
+        // Setup scene based on config parameters
+        
+        // Auto-advance if duration is set
+        if (config.duration) {
+            setTimeout(() => this.onSceneComplete(), config.duration * 1000);
+        }
+    }
+
+    // Scene-specific methods here
+
+    onSceneComplete() {
+        // Notify parent that scene is done
+        window.parent.postMessage({
+            type: 'SCENE_COMPLETE',
+            scene: 'your-scene-name',
+            // Optional: pass data back
+            score: this.score,
+            action: 'next'
+        }, '*');
+    }
+}
+
+// 2. Scene Instantiation
+const scene = new YourSceneName();
+
+// 3. Message Listener for Config
+window.addEventListener('message', (event) => {
+    if (event.data.type === 'SCENE_CONFIG') {
+        scene.init(event.data.config);
+    }
+    
+    // Optional: Listen for API events
+    if (event.data.type === 'SCENE_API_EVENT') {
+        // Handle server-triggered events
+        console.log('Event:', event.data.event);
+    }
+});
+
+// 4. Standalone Fallback (for testing)
+if (window === window.parent) {
+    scene.init({
+        // Default config for standalone testing
+    });
+}
+```
+
+### CSS Best Practices
+```css
+/* Full-screen scene wrapper */
+.scene-wrapper {
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+/* Use relative units for responsiveness */
+/* Prefer rem, em, vh, vw over px */
+/* Support both desktop and mobile */
+```
+
+## Communication API
+
+### Receiving Configuration
+```javascript
+// Scene receives config from main controller
+window.addEventListener('message', (event) => {
+    if (event.data.type === 'SCENE_CONFIG') {
+        const config = event.data.config;
+        // config contains server-provided parameters
+    }
+});
+```
+
+### Receiving API Events
+```javascript
+// Scene receives real-time events from backend
+window.addEventListener('message', (event) => {
+    if (event.data.type === 'SCENE_API_EVENT') {
+        const eventType = event.data.event;
+        // Handle existing events only (see list below)
+    }
+});
+```
+
+**⚠️ IMPORTANT: Use Only Existing Events**
+
+DO NOT create custom event types. Only use these existing events:
+- `START_SCENE` - Scene initialization event
+- `THROW_LOYLY` - Triggered when humidity spike detected (real löyly throw)
+- `SCENE_WIN` - Scene success/completion event
+- `SCENE_LOSS` - Scene failure event
+
+These events are generated by the backend housekeeping service based on sensor data and game logic. If you need new events, they must be added to the backend first in `/backend/src/services/scenes/`.
+
+### Scene Completion
+```javascript
+// Notify when scene is complete
+window.parent.postMessage({
+    type: 'SCENE_COMPLETE',
+    scene: 'scene-name',
+    score: 100,           // Optional
+    action: 'next'        // Optional: 'retry', 'next', 'menu'
+}, '*');
+```
+
+### Scene Change Request
+```javascript
+// Request to change to different scene
+window.parent.postMessage({
+    type: 'CHANGE_SCENE',
+    scene: 1  // Scene ID number
+}, '*');
+```
+
+## Common Configuration Parameters
+
+### Standard Config Options
+```javascript
+{
+    // Common to all scenes
+    duration: 30,              // Auto-advance after N seconds (optional)
+    
+    // Video scenes
+    videoUrl: "path/to/video.mp4",
+    text: "Main heading",
+    subText: "Subheading",
+    showMenu: false,
+    
+    // Game scenes
+    initialTemp: 80,
+    initialHumidity: 10,
+    controlMode: 'manual',     // 'manual' or 'server'
+    difficulty: 'normal',
+    
+    // Custom scene-specific params
+    customParam: "value"
+}
+```
+
+## Scene Types & Patterns
+
+### 1. Passive/Display Scenes
+- Video loops with overlays
+- Winner/loser screens
+- Ambient displays
+- Auto-advance with `duration` parameter
+
+### 2. Interactive Game Scenes
+- User input handling
+- State management (score, progress, etc.)
+- Win/lose conditions
+- Can be server-controlled or manual
+
+### 3. Animated Scenes
+- Canvas-based animations (e.g., fireworks)
+- CSS animations
+- requestAnimationFrame loops
+- Particle systems
+
+## Testing Scenes
+
+### Standalone Testing
+1. Open `scenes/your-scene/index.html` directly in browser
+2. Scene will use fallback config from standalone section
+3. No need for server or main controller
+
+### Integrated Testing
+1. Add scene to `getSceneName()` mapping in `main.js`
+2. Start backend: `docker-compose up`
+3. Set scene via API: `POST /api/control/scene/start/:scene_id`
+4. Frontend will load at `http://localhost:8080`
+
+## Backend Integration
+
+### Setting Current Scene
+```bash
+curl -X POST http://localhost:3000/api/control/scene/start/1
+```
+
+### Getting Current Status
+```bash
+curl http://localhost:3000/api/control/status
+# Returns: { scene: 1, enabled: true, info: {...} }
+```
+
+### Existing Event System
+Backend generates events via housekeeping service based on sensor data:
+```typescript
+// Events are generated in scene handlers (backend/src/services/scenes/)
+return [{
+  event_type: 'THROW_LOYLY',  // Must be one of the existing event types
+  run_at: Date.now(),
+}];
+// Events are polled by frontend and forwarded to active scene
+```
+
+**Available Event Types:**
+- `START_SCENE` - Emitted when scene starts
+- `THROW_LOYLY` - Emitted when real humidity spike detected
+- `SCENE_WIN` - Triggers win condition
+- `SCENE_LOSS` - Triggers loss condition
+
+## Code Style Guidelines
+
+### JavaScript
+- ✅ Use vanilla JavaScript (ES6+)
+- ✅ Class-based architecture
+- ✅ Clear method names
+- ❌ No frameworks (React, Vue, etc.)
+- ❌ No build tools required
+- ❌ No TypeScript in frontend (backend only)
+
+### HTML
+- ✅ Semantic HTML5
+- ✅ Accessible elements
+- ✅ Mobile-first viewport
+- ❌ No inline styles
+- ❌ No inline scripts
+
+### CSS
+- ✅ External stylesheet
+- ✅ Responsive design
+- ✅ CSS animations preferred over JS
+- ✅ Mobile and desktop support
+- ❌ No CSS preprocessors (SASS, LESS)
+
+## Performance Guidelines
+
+- Keep scenes lightweight (< 1MB total)
+- Use CSS animations over JavaScript where possible
+- Debounce/throttle event handlers
+- Clean up intervals/timeouts on scene complete
+- Optimize images and videos
+
+## Common Patterns
+
+### Auto-Advance Timer
+```javascript
+init(config) {
+    if (config.duration) {
+        setTimeout(() => this.onSceneComplete(), config.duration * 1000);
+    }
+}
+```
+
+### Server-Controlled vs Manual Mode
+```javascript
+init(config) {
+    if (config.controlMode === 'server') {
+        this.enableServerControl();
+    } else {
+        this.enableManualControl();
+    }
+}
+```
+
+### Animation Loop
+```javascript
+constructor() {
+    this.animationId = null;
+}
+
+animate() {
+    // Update logic
+    this.animationId = requestAnimationFrame(() => this.animate());
+}
+
+onSceneComplete() {
+    // Clean up
+    if (this.animationId) {
+        cancelAnimationFrame(this.animationId);
+    }
+    // ... notify parent
+}
+```
+
+### DOM Reference Pattern
+```javascript
+constructor() {
+    // Cache DOM references in constructor
+    this.element1 = document.getElementById('element1');
+    this.element2 = document.querySelector('.element2');
+}
+```
+
+## Debugging
+
+### Console Logging
+```javascript
+// Scenes run in iframes, check iframe console
+console.log('Scene initialized:', this.config);
+```
+
+### Testing postMessage
+```javascript
+// In browser console of main page
+const iframe = document.querySelector('iframe');
+iframe.contentWindow.postMessage({
+    type: 'SCENE_CONFIG',
+    config: { test: true }
+}, '*');
+```
+
+## Example Scene Checklist
+
+When creating a new scene, ensure:
+- [ ] Class name is unique and descriptive
+- [ ] `constructor()` initializes all DOM refs and state
+- [ ] `init(config)` applies server configuration
+- [ ] Message listener handles `SCENE_CONFIG`
+- [ ] Standalone fallback works for testing
+- [ ] `onSceneComplete()` notifies parent when done
+- [ ] Scene is added to `getSceneName()` mapping
+- [ ] All intervals/animations are cleaned up
+- [ ] Responsive design works on mobile and desktop
+- [ ] Scene tested standalone and integrated
+
+## File Naming Conventions
+- Scene folders: `kebab-case` (e.g., `loyly-game`, `video-loop`)
+- Class names: `PascalCase` (e.g., `LoylyGame`, `VideoLoopScene`)
+- Config properties: `camelCase` (e.g., `initialTemp`, `showMenu`)
+
+## Harvia Integration Notes
+- Backend polls Harvia API for sauna data
+- Temperature/humidity data available via housekeeping
+- Events can trigger based on real sauna conditions
+- Use sensor data to create responsive experiences
+
+## Don't Do
+- ❌ Don't use `alert()`, `confirm()`, `prompt()` - breaks iframe isolation
+- ❌ Don't access parent DOM directly - use postMessage
+- ❌ Don't use global variables - encapsulate in class
+- ❌ Don't leave running intervals after scene complete
+- ❌ Don't assume specific screen size - responsive design
+- ❌ Don't use external CDN dependencies - keep it local
+- ❌ Don't modify main.js without updating scene mapping
+- ❌ **Don't create custom event types** - use only existing events (START_SCENE, THROW_LOYLY, SCENE_WIN, SCENE_LOSS)
+
+## Best Practices Summary
+✅ Modular, self-contained scenes
+✅ Clear separation of concerns
+✅ PostMessage for all cross-iframe communication
+✅ Standalone testing capability
+✅ Graceful fallbacks for missing config
+✅ Clean up resources on completion
+✅ Responsive and accessible design
+✅ Vanilla JavaScript - no dependencies
+
