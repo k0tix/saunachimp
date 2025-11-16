@@ -190,7 +190,7 @@
                 console.log("iuse", (ownedItem?.in_use ?? 0));
                 div.innerHTML = `
                     <div class="item-icon" style="font-size: 30px; line-height: 50px;">${icon}</div>
-                    <div class="item-name">${isOwned ? item.name+item.id : '???'}</div>
+                    <div class="item-name">${isOwned ? item.name : '???'}</div>
                     ${isOwned ? `<div class="rarity ${item.rarity}">
                         ${item.rarity.toUpperCase()}
                         <button class="btn" style="${(ownedItem?.in_use ?? 0) === 1 ? 'background-color:red' : 'background-color:green'}; font-size: 8px; padding: 4px; margin: 5px 0 0 0;" onclick="toggleItem(${item.id})">${(ownedItem?.in_use ?? 0) === 1 ? 'REMOVE' : 'INSTALL'}</button>
