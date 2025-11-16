@@ -63,7 +63,7 @@ router.post('/purchase/:user_id/:product_id', async (req: Request, res: Response
       });
       return;
     }
-
+    // check if product is already owned
     // Deduct money from user
     const newBalance = userMoney - productPrice;
     await query('UPDATE users SET money = ? WHERE id = ?', [newBalance, user_id]);
@@ -136,7 +136,7 @@ router.put('/:id/toggle-use', async (req: Request, res: Response) => {
       `SELECT op.*, p.item_type as product_type
        FROM owned_products op
        JOIN products p ON op.product_id = p.id
-       WHERE op.id = ?`,
+       WHERE op.product_id = ?`,
       [id]
     ) as OwnedProduct[];
 
@@ -157,12 +157,12 @@ router.put('/:id/toggle-use', async (req: Request, res: Response) => {
         `UPDATE owned_products op
          JOIN products p ON op.product_id = p.id
          SET op.in_use = 0
-         WHERE op.user_id = ? AND p.item_type = ? AND op.id != ?`,
+         WHERE op.user_id = ? AND p.item_type = ? AND op.product_id != ?`,
         [currentProduct.user_id, currentProduct.product_type, id]
       );
     }
     // Update the current item
-    await query('UPDATE owned_products SET in_use = ? WHERE id = ?', [newStatus, id]);
+    await query('UPDATE owned_products SET in_use = ? WHERE product_id = ?', [newStatus, id]);
     res.json({
       success: true,
       message: `Product marked as ${newStatus === 1 ? 'in use' : 'not in use'}`,

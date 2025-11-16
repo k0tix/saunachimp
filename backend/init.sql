@@ -30,16 +30,13 @@ CREATE TABLE IF NOT EXISTS owned_products (
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 
-
-
-
 -- Insert sample data
 INSERT INTO products (name, description, price, item_type, asset_url) VALUES
-  ('Kiuas', 'Harvia Kiuas', 1299, 'kiuas', '/assets/kiuas.jpg'),
-  ('Kupari lauteet', 'Perfect heat transfer for your sauna', 2209, 'lauteet', '/assets/lauteet.jpg'),
-  ('Olut', 'gloms', 2209, 'generic', '/assets/olut.jpg'),
+  ('Kiuas', 'Harvia Kiuas', 1299, 'kiuas', 'habbo_sauna_room_kiuas.png'),
+  ('Kupari lauteet', 'Perfect heat transfer for your sauna', 2209, 'lauteet', 'habbo_sauna_kupari.png'),
+  ('Olut', 'gloms', 2209, 'generic', ''),
   ('saunakauha', 'saunakauha', 10, 'saunakauha', '/assets/saunakauha.jpg'),
-  ('saunakiulu', 'saunakiulu', 10, 'kiilu', '/assets/kiulu.jpg');
+  ('saunakiulu', 'saunakiulu', 10, 'kiulu', 'habbo_sauna_room_kiulu.png');
 
 -- Insert sample user
 INSERT INTO users (id, username, email) VALUES
