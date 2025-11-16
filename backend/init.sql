@@ -74,3 +74,10 @@ CREATE TABLE IF NOT EXISTS sensor_logs (
   INDEX idx_sauna_status (sauna_status)
 );
 
+-- Wellness results table
+CREATE TABLE IF NOT EXISTS wellness_results (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  session_id VARCHAR(255),
+  wellness TEXT NOT NULL,
+  sensor_timestamp VARCHAR(50)
+)

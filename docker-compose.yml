@@ -56,6 +56,23 @@ services:
       - ./simple-frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - backend
+  wellness:
+    build: ./wellness
+    container_name: wellness_api
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      POLL_INTERVAL_SECONDS: ${POLL_INTERVAL_SECONDS}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    ports:
+      - "8888:8888"
 
 volumes:
   mysql_data:
