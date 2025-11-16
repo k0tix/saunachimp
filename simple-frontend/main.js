@@ -14,19 +14,7 @@ class SaunaController {
         setInterval(() => this.pollScene(), 2000); // Poll every 2 seconds
         window.addEventListener('message', (event) => {
             if (event.data.type === 'CHANGE_SCENE') {
-                const rawId = event.data.scene;
-                const numericId = Number(rawId);
-                // Fire backend request (do not block UI)
-                fetch(`${this.serverUrl}/api/control/scene/start/${rawId}`, { method: 'POST' }).catch(()=>{});
-                // Optimistic frontend switch
-                const optimisticName = this.getSceneName(isNaN(numericId) ? rawId : numericId);
-                // Only switch if mapping exists
-                if (optimisticName) {
-                    // Provide minimal default config for wellness
-                    const cfg = (numericId === 8 || optimisticName === 'wellness-report') ? { autoLatest: true } : {};
-                    this.loadScene(optimisticName, cfg);
-                    this.currentScene = numericId; // Prevent immediate poll overwrite
-                }
+                fetch(`${this.serverUrl}/api/control/scene/start/${event.data.scene}`,{method: 'POST'});
             }
         });
     }
