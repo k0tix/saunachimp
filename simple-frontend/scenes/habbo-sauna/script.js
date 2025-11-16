@@ -56,6 +56,9 @@
                         if (index === 0) {
                             imgRatio = img.height/img.width;
                             canvasHeight = imgRatio * canvasWidth;
+                            if(canvasHeight > window.innerHeight) {
+                                canvasHeight = window.innerHeight;
+                            }
                             //canvasWidth = img.width;
                             //canvasHeight = img.height;
                             canvas.width = canvasWidth;
@@ -98,10 +101,11 @@
         window.addEventListener('resize', () => {
             canvasWidth = window.innerWidth - 300;
             canvasHeight = imgRatio * canvasWidth;
-            //canvasHeight = window.innerHeight;
+            if(canvasHeight > window.innerHeight) {
+                canvasHeight = window.innerHeight;
+            }
             canvas.width = canvasWidth;
             canvas.height = canvasHeight;
-            //console.log('resize', canvasWidth, canvasHeight);
             render();
         });
 
