@@ -14,14 +14,16 @@
             'lauteet',
             'kiulu',
             'kiuas',
-            'generic'
+            'generic',
+            'saunakauha'
         ]
         const layers = [
             { id: 'layer0', src: 'habbo_sauna_room.png', type: 'background' },
             { id: 'layer1', src: '', type: 'lauteet' },
             { id: 'layer2', src: '', type: 'kiulu' },
             { id: 'layer3', src: '', type: 'kiuas' },
-            { id: 'layer4', src: '', type: 'generic' }
+            { id: 'layer4', src: '', type: 'generic' },
+            { id: 'layer5', src: '', type: 'saunakauha' }
         ];
 
         // Canvas setup
@@ -43,6 +45,7 @@
             images['layer2'] = null;
             images['layer3'] = null;
             images['layer4'] = null;
+            images['layer5'] = null;
             expectedImages = layers.filter(layer => layer.src!=='').length;
             layers.forEach(async (layer, index) => {
 

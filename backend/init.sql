@@ -34,8 +34,8 @@ CREATE TABLE IF NOT EXISTS owned_products (
 INSERT INTO products (name, description, price, item_type, asset_url) VALUES
   ('Kiuas', 'Harvia Kiuas', 1299, 'kiuas', 'habbo_sauna_room_kiuas.png'),
   ('Kupari lauteet', 'Perfect heat transfer for your sauna', 2209, 'lauteet', 'habbo_sauna_kupari.png'),
-  ('Olut', 'gloms', 2209, 'generic', ''),
-  ('saunakauha', 'saunakauha', 10, 'saunakauha', '/assets/saunakauha.jpg'),
+  ('Olut', 'gloms', 2209, 'generic', 'habbo_sauna_room_olut.png'),
+  ('saunakauha', 'saunakauha', 10, 'saunakauha', 'habbo_sauna_kauha.png'),
   ('saunakiulu', 'saunakiulu', 10, 'kiulu', 'habbo_sauna_room_kiulu.png');
 
 -- Insert sample user
