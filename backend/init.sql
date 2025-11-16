@@ -78,5 +78,6 @@ CREATE TABLE IF NOT EXISTS sensor_logs (
 CREATE TABLE IF NOT EXISTS wellness_results (
   id INT AUTO_INCREMENT PRIMARY KEY,
   session_id VARCHAR(255),
-  wellness TEXT NOT NULL
+  wellness TEXT NOT NULL,
+  sensor_timestamp VARCHAR(50)
 )

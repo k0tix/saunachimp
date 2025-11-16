@@ -62,13 +62,13 @@ async def fetch_sensor_logs():
         conn.close()
 
 
-async def save_result(session_id: str, wellness: str):
+async def save_result(session_id: str, wellness: str, sensor_timestamp: str):
     conn = await get_conn()
     try:
         async with conn.cursor() as cur:
             await cur.execute(
-                "INSERT INTO wellness_results (session_id, wellness) VALUES (%s, %s)",
-                (session_id, wellness),
+                "INSERT INTO wellness_results (session_id, wellness, sensor_timestamp) VALUES (%s, %s, %s)",
+                (session_id, wellness, sensor_timestamp),
             )
     finally:
         conn.close()
@@ -138,9 +138,9 @@ async def poll():
             try:
                 logger.info("Writing into db")
                 result = await wellness_assessment(
-                    str(pending.drop(columns=["SESSION_ID"]).to_dict(orient="records")))
+                    str(pending.drop(columns=["SESSION_ID", "SENSOR_TIMESTAMP"]).to_dict(orient="records")))
                 logger.info(f"{result}")
-                await save_result(pending["SESSION_ID"].max(), result)
+                await save_result(pending["SESSION_ID"].max(), result, pending["SENSOR_TIMESTAMP"].max())
                 logger.info("Written into db")
             except Exception as e:
                 logger.info(f"Error processing item with timestamp {pending['SENSOR_TIMESTAMP'].max()}: {e}")
